@@ -10,6 +10,17 @@ Deno.test("stringify scalar", () => {
   assertEquals(stringify(30), "30");
   assertEquals(stringify(30.1), "30.1");
 
+  assertEquals(stringify(30n), "30n");
+  assertEquals(stringify(-30n), "-30n");
+  assertEquals(
+    stringify(9007199254740991000000n),
+    "9007199254740991000000n",
+  );
+  assertEquals(
+    stringify(-9007199254740991000000n),
+    "-9007199254740991000000n",
+  );
+
   assertEquals(stringify("string"), '"string"');
 });
 

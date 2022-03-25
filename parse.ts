@@ -190,36 +190,41 @@ export function parse(code: string) {
       result += buf[pos];
       pos++;
     }
-    if (buf[pos] === ".") {
-      result += ".";
+    if (buf[pos] === "n") {
       pos++;
-      if (NUM_CHARS.has(buf[pos])) {
-        result += buf[pos];
+      return BigInt(isNeg ? `-${result}` : result);
+    } else {
+      if (buf[pos] === ".") {
+        result += ".";
         pos++;
-      } else {
-        throw error();
+        if (NUM_CHARS.has(buf[pos])) {
+          result += buf[pos];
+          pos++;
+        } else {
+          throw error();
+        }
+        while (NUM_CHARS.has(buf[pos])) {
+          result += buf[pos];
+          pos++;
+        }
       }
-      while (NUM_CHARS.has(buf[pos])) {
+      if (buf[pos] === "e" || buf[pos] === "E") {
         result += buf[pos];
         pos++;
-      }
-    }
-    if (buf[pos] === "e" || buf[pos] === "E") {
-      result += buf[pos];
-      pos++;
-      if (buf[pos] === "-" || buf[pos] === "+") {
-        result += buf[pos];
-        pos++;
-      }
-      if (NUM_CHARS.has(buf[pos])) {
-        result += buf[pos];
-        pos++;
-      } else {
-        throw error();
-      }
-      while (NUM_CHARS.has(buf[pos])) {
-        result += buf[pos];
-        pos++;
+        if (buf[pos] === "-" || buf[pos] === "+") {
+          result += buf[pos];
+          pos++;
+        }
+        if (NUM_CHARS.has(buf[pos])) {
+          result += buf[pos];
+          pos++;
+        } else {
+          throw error();
+        }
+        while (NUM_CHARS.has(buf[pos])) {
+          result += buf[pos];
+          pos++;
+        }
       }
     }
     return isNeg ? -1 * +result : +result;

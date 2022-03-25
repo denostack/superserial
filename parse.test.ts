@@ -14,6 +14,17 @@ Deno.test("parse scalar", () => {
   assertEquals(parse(stringify(30)), 30);
   assertEquals(parse(stringify(30.1)), 30.1);
 
+  assertEquals(parse(stringify(30n)), 30n);
+  assertEquals(parse(stringify(-30n)), -30n);
+  assertEquals(
+    parse(stringify(9007199254740991000000n)),
+    9007199254740991000000n,
+  );
+  assertEquals(
+    parse(stringify(-9007199254740991000000n)),
+    -9007199254740991000000n,
+  );
+
   assertEquals(parse(stringify("string")), "string");
 });
 
