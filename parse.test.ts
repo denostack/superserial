@@ -1,4 +1,7 @@
-import { assertEquals } from "https://deno.land/std@0.131.0/testing/asserts.ts";
+import {
+  assertEquals,
+  assertStrictEquals,
+} from "https://deno.land/std@0.131.0/testing/asserts.ts";
 import { stringify } from "./stringify.ts";
 import { parse } from "./parse.ts";
 
@@ -24,4 +27,39 @@ Deno.test("parse regex", () => {
   assertEquals(parse(stringify(/abc/)), /abc/);
 
   assertEquals(parse(stringify(/abc/gmi)), /abc/gmi);
+});
+
+Deno.test("parse object", () => {
+  assertEquals(parse(stringify({})), {});
+
+  assertEquals(parse(stringify({ foo: "foo string" })), {
+    "foo": "foo string",
+  });
+});
+
+Deno.test("parse object self circular", () => {
+  const circular = { boolean: false } as any;
+  circular.self = circular;
+
+  const result = parse(stringify(circular));
+
+  assertEquals(result.boolean, false);
+  assertStrictEquals(result.self, result);
+});
+
+Deno.test("parse object circular", () => {
+  const parent = {} as any;
+  const child1 = { parent } as any;
+  const child2 = { parent } as any;
+  child1.sibling = child2;
+  child2.sibling = child1;
+  parent.children = [child1, child2];
+
+  const result = parse(stringify(parent));
+
+  assertStrictEquals(result.children[0].parent, result);
+  assertStrictEquals(result.children[1].parent, result);
+
+  assertStrictEquals(result.children[0].sibling, result.children[1]);
+  assertStrictEquals(result.children[1].sibling, result.children[0]);
 });

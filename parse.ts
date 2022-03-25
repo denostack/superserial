@@ -11,8 +11,10 @@ const STRING_ESC: Record<string, string | undefined> = {
   t: "\t",
 };
 
-export function parse(ctx: string) {
-  const buf = ctx;
+export function parse(code: string) {
+  const refSymbol = Symbol();
+  const refs = [] as any[];
+  const buf = code;
   let pos = 0;
 
   function white() {
@@ -37,17 +39,19 @@ export function parse(ctx: string) {
     );
   }
 
-  function json(): any {
+  function parseJson(): any {
     white();
     switch (buf[pos]) {
+      case "$":
+        return parseRef();
       case "{":
-        return object();
+        return parseObject();
       case "[":
-        return array();
+        return parseArray();
       case "/":
-        return regexp();
+        return parseRegExp();
       case '"':
-        return string();
+        return parseString();
       case "-":
       case "I":
       case "N":
@@ -61,7 +65,7 @@ export function parse(ctx: string) {
       case "7":
       case "8":
       case "9": {
-        return number();
+        return parseNumber();
       }
       case "t": {
         pos++;
@@ -89,18 +93,29 @@ export function parse(ctx: string) {
     throw error();
   }
 
-  function array() {
+  function parseRef() {
+    pos++;
+    let result = "";
+    while (NUM_CHARS.has(buf[pos])) {
+      result += buf[pos];
+      pos++;
+    }
+    const index = +result;
+    return Object.assign(() => refs[index], { ref: refSymbol });
+  }
+
+  function parseArray() {
     pos++;
     white();
     if (buf[pos] === "]") {
       pos++;
       return [];
     }
-    const result = [json()];
+    const result = [parseJson()];
     white();
     while (buf[pos] === ",") {
       pos++;
-      result.push(json());
+      result.push(parseJson());
       white();
     }
     if (buf[pos] === "]") {
@@ -110,7 +125,7 @@ export function parse(ctx: string) {
     throw error();
   }
 
-  function object() {
+  function parseObject() {
     pos++;
     white();
     if (buf[pos] === "}") {
@@ -119,13 +134,13 @@ export function parse(ctx: string) {
     }
     const result = {} as Record<string, any>;
     while (1) {
-      const key = string();
+      const key = parseString();
       white();
       if (buf[pos] !== ":") {
         throw error();
       }
       pos++;
-      result[key as string] = json();
+      result[key as string] = parseJson();
       white();
       if (buf[pos] === ",") {
         pos++;
@@ -140,7 +155,7 @@ export function parse(ctx: string) {
     }
   }
 
-  function number() {
+  function parseNumber() {
     if (buf[pos] === "N") {
       pos++;
       consume("a");
@@ -210,7 +225,7 @@ export function parse(ctx: string) {
     return isNeg ? -1 * +result : +result;
   }
 
-  function string() {
+  function parseString() {
     let result = "";
     pos++;
     while (1) {
@@ -245,7 +260,7 @@ export function parse(ctx: string) {
     }
   }
 
-  function regexp() {
+  function parseRegExp() {
     let result = "";
     pos++;
     if (buf[pos] === "/") {
@@ -347,10 +362,36 @@ export function parse(ctx: string) {
     }
   }
 
-  const result = json();
+  refs.push(parseJson());
   white();
+  while (buf[pos] === ";") {
+    consume(";");
+    refs.push(parseJson());
+    white();
+  }
+
   if (buf.length !== pos) {
     throw error();
   }
-  return result;
+
+  // resolve ref
+  function resolveRef(value: any) {
+    const typeofValue = typeof value;
+    if (typeofValue === "function" && value.ref === refSymbol) {
+      return value();
+    }
+    if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i++) {
+        value[i] = resolveRef(value[i]);
+      }
+    }
+    if (typeofValue === "object" || typeofValue === "function") {
+      for (const key in value) {
+        value[key] = resolveRef(value[key]);
+      }
+    }
+    return value;
+  }
+
+  return resolveRef(refs[0]);
 }
