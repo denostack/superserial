@@ -28,6 +28,14 @@ console.log(serialized);
 // [$1,$2];{"self":$1,"siblings":$0};{"self":$2,"siblings":$0}
 ```
 
+### in Node.js
+
+```ts
+import { Serializer } from "superserial";
+
+//
+```
+
 ## Index
 
 - [Extending types](#extending-types)
