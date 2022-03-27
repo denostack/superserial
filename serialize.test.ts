@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.131.0/testing/asserts.ts";
 import { serialize } from "./serialize.ts";
+import { toDeserialize, toSerialize } from "./symbol.ts";
 
 Deno.test("serialize scalar", () => {
   assertEquals(serialize(null), "null");
@@ -77,14 +78,6 @@ Deno.test("serialize class", () => {
     publicSomething = 2;
     constructor(public name: string, public age: number) {
     }
-
-    get privateSomething() {
-      return this.#_privateSomething;
-    }
-
-    set privateSomething(value: number) {
-      this.#_privateSomething = value;
-    }
   }
 
   const user = new TestUser("wan2land", 20);
@@ -92,5 +85,30 @@ Deno.test("serialize class", () => {
   assertEquals(
     serialize(user),
     'TestUser{"name":"wan2land","age":20,"publicSomething":2}',
+  );
+});
+
+Deno.test("serialize class with private", () => {
+  class TestUser {
+    #_privateSomething = 1;
+    publicSomething = 2;
+    constructor(public name: string, public age: number) {
+    }
+
+    [toSerialize]() {
+      return {
+        name: this.name,
+        age: this.age,
+        publicSomething: this.publicSomething,
+        privateSomething: this.#_privateSomething,
+      };
+    }
+  }
+
+  const user = new TestUser("wan2land", 20);
+
+  assertEquals(
+    serialize(user),
+    'TestUser{"name":"wan2land","age":20,"publicSomething":2,"privateSomething":1}',
   );
 });

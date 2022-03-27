@@ -1,3 +1,5 @@
+import { toDeserialize } from "./symbol.ts";
+
 const WS_CHARS = new Set(["\r", "\n", "\t", " "]);
 const NUM_CHARS = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 
@@ -15,7 +17,10 @@ export interface DeserializeOptions {
   classes?: { [className: string]: Function };
 }
 
-export function deserialize(code: string, options: DeserializeOptions = {}) {
+export function deserialize(
+  code: string,
+  options: DeserializeOptions = {},
+): any {
   const mapClasses = options.classes ?? {};
 
   const refSymbol = Symbol();
@@ -91,12 +96,15 @@ export function deserialize(code: string, options: DeserializeOptions = {}) {
             return false;
         }
         if (buf[pos] === "{") {
-          const obj = parseObject();
+          let obj = parseObject();
           const baseClass = mapClasses[name] ?? null;
           if (name && !baseClass) {
             console.warn(`Class ${name} is not defined. It will be ignored.`);
           }
           if (baseClass) {
+            if (typeof (baseClass as any)[toDeserialize] === "function") {
+              obj = (baseClass as any)[toDeserialize](obj);
+            }
             Object.setPrototypeOf(obj, baseClass.prototype);
           }
           return obj;

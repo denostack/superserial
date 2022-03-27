@@ -1,10 +1,12 @@
 import {
   assertEquals,
+  assertInstanceOf,
   assertStrictEquals,
 } from "https://deno.land/std@0.131.0/testing/asserts.ts";
 import { assertSpyCall, spy } from "https://deno.land/x/mock@0.15.0/mod.ts";
 
 import { deserialize } from "./deserialize.ts";
+import { toDeserialize } from "./symbol.ts";
 
 Deno.test("deserialize scalar", () => {
   assertEquals(deserialize("null"), null);
@@ -109,14 +111,6 @@ Deno.test("deserialize class", () => {
     publicSomething = 2;
     constructor(public name: string, public age: number) {
     }
-
-    get privateSomething() {
-      return this.#_privateSomething;
-    }
-
-    set privateSomething(value: number) {
-      this.#_privateSomething = value;
-    }
   }
 
   const spyConsole = spy(console, "warn");
@@ -128,6 +122,48 @@ Deno.test("deserialize class", () => {
 
   assertEquals(deserialized, new TestUser("wan2land", 20));
   assertEquals(deserialized instanceof TestUser, true);
+
+  assertEquals(spyConsole.calls.length, 0);
+
+  spyConsole.restore();
+});
+
+Deno.test("deserialize class with private", () => {
+  class TestUser {
+    static [toDeserialize](
+      values: {
+        name: string;
+        age: number;
+        publicSomething: number;
+        privateSomething: number;
+      },
+    ) {
+      const user = new TestUser(values.name, values.age);
+      user.publicSomething = values.publicSomething;
+      user.#_privateSomething = values.privateSomething;
+      return user;
+    }
+
+    #_privateSomething = 1;
+    publicSomething = 2;
+    constructor(public name: string, public age: number) {
+    }
+
+    get privateViaGetter() {
+      return this.#_privateSomething;
+    }
+  }
+
+  const spyConsole = spy(console, "warn");
+
+  const deserialized = deserialize(
+    'TestUser{"name":"wan2land","age":20,"publicSomething":2,"privateSomething":30}',
+    { classes: { TestUser } },
+  ) as TestUser;
+
+  assertEquals(deserialized, new TestUser("wan2land", 20));
+  assertEquals(deserialized.privateViaGetter, 30);
+  assertInstanceOf(deserialized, TestUser);
 
   assertEquals(spyConsole.calls.length, 0);
 

@@ -1,3 +1,5 @@
+import { toSerialize } from "./symbol.ts";
+
 export function serialize(value: any): string {
   let inc = 0;
   const objects = new Map<number, any>();
@@ -47,8 +49,12 @@ export function serialize(value: any): string {
         value.constructor !== Object && value.constructor !== Function
           ? value.constructor.name
           : "";
+
+      const serializeBase = typeof value[toSerialize] === "function"
+        ? value[toSerialize]()
+        : value;
       const objAsString = `${name}{${
-        Object.entries(value).map(([k, v]) => {
+        Object.entries(serializeBase).map(([k, v]) => {
           return `"${k.replace('"', '\\"')}":${_traverse(v)}`;
         }).join(",")
       }}`;
