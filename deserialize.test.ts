@@ -46,11 +46,27 @@ Deno.test("deserialize regex", () => {
   assertEquals(deserialize("/abc/igm"), /abc/gmi);
 });
 
+Deno.test("deserialize array", () => {
+  assertEquals(deserialize("[]"), []);
+
+  assertEquals(
+    deserialize('[$1,$2];{"name":"wan2land"};{"name":"wan3land"}'),
+    [{ name: "wan2land" }, { name: "wan3land" }],
+  );
+
+  // also support json
+  assertEquals(
+    deserialize('[{"name":"wan2land"},{"name":"wan3land"}]'),
+    [{ name: "wan2land" }, { name: "wan3land" }],
+  );
+});
+
 Deno.test("deserialize object", () => {
   assertEquals(deserialize("{}"), {});
 
-  assertEquals(deserialize('{ "foo": "foo string" }'), {
-    "foo": "foo string",
+  assertEquals(deserialize('{"foo":"foo string","und":undefined}'), {
+    foo: "foo string",
+    und: undefined,
   });
 
   assertEquals(

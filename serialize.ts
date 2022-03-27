@@ -36,32 +36,33 @@ export function serialize(value: any): string {
       return value.toString();
     }
 
-    if (Array.isArray(value)) {
-      return `[${value.map(_traverse).join(",")}]`;
-    }
-
     let oIdx = objectIndexMap.get(value);
     if (typeof oIdx !== "number") {
       oIdx = inc++;
       objectIndexMap.set(value, oIdx);
 
-      const name =
-        value.constructor !== Object && value.constructor !== Function
-          ? value.constructor.name
-          : "";
+      let serialized: string;
+      if (Array.isArray(value)) {
+        serialized = `[${value.map(_traverse).join(",")}]`;
+      } else {
+        const name =
+          value.constructor !== Object && value.constructor !== Function
+            ? value.constructor.name
+            : "";
 
-      const serializeBase = typeof value[toSerialize] === "function"
-        ? value[toSerialize]()
-        : value;
-      const objAsString = `${name}{${
-        Object.entries(serializeBase).map(([k, v]) => {
-          return `"${k.replace('"', '\\"')}":${_traverse(v)}`;
-        }).join(",")
-      }}`;
+        const serializeBase = typeof value[toSerialize] === "function"
+          ? value[toSerialize]()
+          : value;
+        serialized = `${name}{${
+          Object.entries(serializeBase).map(([k, v]) => {
+            return `"${k.replace('"', '\\"')}":${_traverse(v)}`;
+          }).join(",")
+        }}`;
+      }
 
-      objects.set(oIdx, objAsString);
+      objects.set(oIdx, serialized);
       if (oIdx === 0) {
-        return objAsString;
+        return serialized;
       }
     }
     return `$${oIdx}`;

@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.131.0/testing/asserts.ts";
 import { serialize } from "./serialize.ts";
-import { toDeserialize, toSerialize } from "./symbol.ts";
+import { toSerialize } from "./symbol.ts";
 
 Deno.test("serialize scalar", () => {
   assertEquals(serialize(null), "null");
@@ -38,10 +38,22 @@ Deno.test("serialize regex", () => {
   assertEquals(serialize(/abc/gmi), "/abc/gim");
 });
 
+Deno.test("serialize array", () => {
+  assertEquals(serialize([]), "[]");
+
+  assertEquals(
+    serialize([{ name: "wan2land" }, { name: "wan3land" }]),
+    '[$1,$2];{"name":"wan2land"};{"name":"wan3land"}',
+  );
+});
+
 Deno.test("serialize object", () => {
   assertEquals(serialize({}), "{}");
 
-  assertEquals(serialize({ foo: "foo string" }), '{"foo":"foo string"}');
+  assertEquals(
+    serialize({ foo: "foo string", und: undefined }),
+    '{"foo":"foo string","und":undefined}',
+  );
   assertEquals(
     serialize({ foo: { bar: "bar string" } }),
     '{"foo":$1};{"bar":"bar string"}',
@@ -58,13 +70,16 @@ Deno.test("serialize object circular", () => {
   const parent = {} as any;
   const child1 = { parent } as any;
   const child2 = { parent } as any;
-  child1.sibling = child2;
-  child2.sibling = child1;
-  parent.children = [child1, child2];
+  const children = [child1, child2];
+  child1.next = child2;
+  child1.siblings = children;
+  child2.next = child1;
+  child2.siblings = children;
+  parent.children = children;
 
   assertEquals(
     serialize(parent),
-    '{"children":[$1,$2]};{"parent":$0,"sibling":$2};{"parent":$0,"sibling":$1}',
+    '{"children":$1};[$2,$3];{"parent":$0,"next":$3,"siblings":$1};{"parent":$0,"next":$2,"siblings":$1}',
   );
 });
 
