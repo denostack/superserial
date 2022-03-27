@@ -1,9 +1,9 @@
-export function stringify(value: any): string {
+export function serialize(value: any): string {
   let inc = 0;
   const objects = new Map<number, any>();
   const objectIndexMap = new Map<any, number>();
 
-  function _stringify(value: any): string {
+  function _traverse(value: any): string {
     if (value === null) {
       return "null";
     }
@@ -35,7 +35,7 @@ export function stringify(value: any): string {
     }
 
     if (Array.isArray(value)) {
-      return `[${value.map(_stringify).join(",")}]`;
+      return `[${value.map(_traverse).join(",")}]`;
     }
 
     let oIdx = objectIndexMap.get(value);
@@ -49,7 +49,7 @@ export function stringify(value: any): string {
           : "";
       const objAsString = `${name}{${
         Object.entries(value).map(([k, v]) => {
-          return `"${k.replace('"', '\\"')}":${_stringify(v)}`;
+          return `"${k.replace('"', '\\"')}":${_traverse(v)}`;
         }).join(",")
       }}`;
 
@@ -61,7 +61,7 @@ export function stringify(value: any): string {
     return `$${oIdx}`;
   }
 
-  let result = _stringify(value);
+  let result = _traverse(value);
   for (let i = 1; i < inc; i++) {
     result += (i ? ";" : "") + objects.get(i);
   }

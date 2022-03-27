@@ -1,12 +1,12 @@
-import { stringify } from "./stringify.ts";
-import { parse } from "./parse.ts";
+import { serialize } from "./serialize.ts";
+import { deserialize } from "./deserialize.ts";
 
 export class Serializer {
   serialize(value: any): string {
-    return stringify(value);
+    return serialize(value);
   }
 
   deserialize<T = any>(code: string): T {
-    return parse(code);
+    return deserialize(code);
   }
 }

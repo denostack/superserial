@@ -11,12 +11,12 @@ const STRING_ESC: Record<string, string | undefined> = {
   t: "\t",
 };
 
-export interface ParseOptions {
-  mapClasses?: { [className: string]: Function };
+export interface DeserializeOptions {
+  classes?: { [className: string]: Function };
 }
 
-export function parse(code: string, options: ParseOptions = {}) {
-  const mapClasses = options.mapClasses ?? {};
+export function deserialize(code: string, options: DeserializeOptions = {}) {
+  const mapClasses = options.classes ?? {};
 
   const refSymbol = Symbol();
   const refs = [] as any[];
