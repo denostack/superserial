@@ -25,6 +25,11 @@ const serialized = serializer.serialize(obj);
 console.log(serialized);
 // output:
 // {"string":"string","number":3000,"nan":NaN,"infinity":Infinity,"bigint":12341234123412341234123412341234n,"children":[$1,$2]};{"parent":$0};{"parent":$0}
+
+const deserialized = serializer.deserialize(serialized);
+
+console.log(deserialized.children[0].parent === deserialized); // true
+console.log(deserialized.children[1].parent === deserialized); // true
 ```
 
 ## Support
@@ -33,3 +38,4 @@ console.log(serialized);
 - [x] Circular
 - [ ] Class
 - [ ] Serialize / Deserialize method
+- [ ] `function`
