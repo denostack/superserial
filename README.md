@@ -36,6 +36,6 @@ console.log(deserialized.children[1].parent === deserialized); // true
 
 - [x] Extend Scalar, `NaN`, `Infinity`, `undefined`, `bigint`
 - [x] Circular
-- [ ] Class
+- [x] Class
 - [ ] Serialize / Deserialize method
 - [ ] `function`

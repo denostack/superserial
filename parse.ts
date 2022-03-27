@@ -11,7 +11,13 @@ const STRING_ESC: Record<string, string | undefined> = {
   t: "\t",
 };
 
-export function parse(code: string) {
+export interface ParseOptions {
+  mapClasses?: { [className: string]: Function };
+}
+
+export function parse(code: string, options: ParseOptions = {}) {
+  const mapClasses = options.mapClasses ?? {};
+
   const refSymbol = Symbol();
   const refs = [] as any[];
   const buf = code;
@@ -56,8 +62,6 @@ export function parse(code: string) {
       case '"':
         return parseString();
       case "-":
-      case "I":
-      case "N":
       case "0":
       case "1":
       case "2":
@@ -70,27 +74,36 @@ export function parse(code: string) {
       case "9": {
         return parseNumber();
       }
-      case "u": {
-        pos++;
-        consume("ndefined");
-        return undefined;
-      }
-      case "t": {
-        pos++;
-        consume("rue");
-        return true;
-      }
-      case "f": {
-        pos++;
-        consume("alse");
-        return false;
-      }
-      case "n": {
-        pos++;
-        consume("ull");
-        return null;
+      default: {
+        const name = parseName();
+        switch (name) {
+          case "NaN":
+            return NaN;
+          case "Infinity":
+            return Infinity;
+          case "undefined":
+            return undefined;
+          case "null":
+            return null;
+          case "true":
+            return true;
+          case "false":
+            return false;
+        }
+        if (buf[pos] === "{") {
+          const obj = parseObject();
+          const baseClass = mapClasses[name] ?? null;
+          if (name && !baseClass) {
+            console.warn(`Class ${name} is not defined. It will be ignored.`);
+          }
+          if (baseClass) {
+            Object.setPrototypeOf(obj, baseClass.prototype);
+          }
+          return obj;
+        }
       }
     }
+
     throw error();
   }
 
@@ -98,8 +111,7 @@ export function parse(code: string) {
     pos++;
     let result = "";
     while (NUM_CHARS.has(buf[pos])) {
-      result += buf[pos];
-      pos++;
+      result += buf[pos++];
     }
     const index = +result;
     return Object.assign(() => refs[index], { ref: refSymbol });
@@ -157,12 +169,6 @@ export function parse(code: string) {
   }
 
   function parseNumber() {
-    if (buf[pos] === "N") {
-      pos++;
-      consume("aN");
-      return NaN;
-    }
-
     let result = "";
     let isNeg = false;
     if (buf[pos] === "-") {
@@ -175,49 +181,40 @@ export function parse(code: string) {
       return isNeg ? -Infinity : Infinity;
     }
     if (NUM_CHARS.has(buf[pos])) {
-      result += buf[pos];
-      pos++;
+      result += buf[pos++];
     } else {
       throw error();
     }
     while (NUM_CHARS.has(buf[pos])) {
-      result += buf[pos];
-      pos++;
+      result += buf[pos++];
     }
     if (buf[pos] === "n") {
       pos++;
       return BigInt(isNeg ? `-${result}` : result);
     } else {
       if (buf[pos] === ".") {
-        result += ".";
-        pos++;
+        result += buf[pos++];
         if (NUM_CHARS.has(buf[pos])) {
-          result += buf[pos];
-          pos++;
+          result += buf[pos++];
         } else {
           throw error();
         }
         while (NUM_CHARS.has(buf[pos])) {
-          result += buf[pos];
-          pos++;
+          result += buf[pos++];
         }
       }
       if (buf[pos] === "e" || buf[pos] === "E") {
-        result += buf[pos];
-        pos++;
+        result += buf[pos++];
         if (buf[pos] === "-" || buf[pos] === "+") {
-          result += buf[pos];
-          pos++;
+          result += buf[pos++];
         }
         if (NUM_CHARS.has(buf[pos])) {
-          result += buf[pos];
-          pos++;
+          result += buf[pos++];
         } else {
           throw error();
         }
         while (NUM_CHARS.has(buf[pos])) {
-          result += buf[pos];
-          pos++;
+          result += buf[pos++];
         }
       }
     }
@@ -253,8 +250,7 @@ export function parse(code: string) {
           throw error();
         }
       } else {
-        result += buf[pos];
-        pos++;
+        result += buf[pos++];
       }
     }
   }
@@ -350,15 +346,37 @@ export function parse(code: string) {
         }
         return new RegExp(result);
       } else if (buf[pos] === "\\") {
-        result += buf[pos];
-        pos++;
-        result += buf[pos];
-        pos++;
+        result += buf[pos++];
+        result += buf[pos++];
       } else {
-        result += buf[pos];
-        pos++;
+        result += buf[pos++];
       }
     }
+  }
+
+  function parseName() {
+    let chartCode = buf.charCodeAt(pos);
+    let result = "";
+    if (
+      chartCode >= 65 && chartCode <= 90 || chartCode >= 97 && chartCode <= 122
+    ) {
+      result += buf[pos++];
+    } else {
+      return result;
+    }
+    while ((chartCode = buf.charCodeAt(pos))) {
+      if (
+        chartCode >= 65 && chartCode <= 90 ||
+        chartCode >= 97 && chartCode <= 122 ||
+        chartCode >= 48 && chartCode <= 57 ||
+        chartCode === 95
+      ) {
+        result += buf[pos++];
+      } else {
+        break;
+      }
+    }
+    return result;
   }
 
   refs.push(parseJson());

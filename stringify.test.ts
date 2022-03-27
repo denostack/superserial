@@ -41,6 +41,10 @@ Deno.test("stringify object", () => {
   assertEquals(stringify({}), "{}");
 
   assertEquals(stringify({ foo: "foo string" }), '{"foo":"foo string"}');
+  assertEquals(
+    stringify({ foo: { bar: "bar string" } }),
+    '{"foo":$1};{"bar":"bar string"}',
+  );
 });
 
 Deno.test("stringify object self circular", () => {
@@ -60,5 +64,33 @@ Deno.test("stringify object circular", () => {
   assertEquals(
     stringify(parent),
     '{"children":[$1,$2]};{"parent":$0,"sibling":$2};{"parent":$0,"sibling":$1}',
+  );
+});
+
+Deno.test("stringify function (not support)", () => {
+  assertEquals(stringify(function () {}), "{}");
+});
+
+Deno.test("stringify class", () => {
+  class TestUser {
+    #_privateSomething = 1;
+    publicSomething = 2;
+    constructor(public name: string, public age: number) {
+    }
+
+    get privateSomething() {
+      return this.#_privateSomething;
+    }
+
+    set privateSomething(value: number) {
+      this.#_privateSomething = value;
+    }
+  }
+
+  const user = new TestUser("wan2land", 20);
+
+  assertEquals(
+    stringify(user),
+    'TestUser{"name":"wan2land","age":20,"publicSomething":2}',
   );
 });

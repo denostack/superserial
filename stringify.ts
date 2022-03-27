@@ -42,24 +42,27 @@ export function stringify(value: any): string {
     if (typeof oIdx !== "number") {
       oIdx = inc++;
       objectIndexMap.set(value, oIdx);
-      objects.set(
-        oIdx,
-        `{${
-          Object.entries(value).map(([k, v]) => {
-            return `"${k.replace('"', '\\"')}":${_stringify(v)}`;
-          }).join(",")
-        }}`,
-      );
+
+      const name =
+        value.constructor !== Object && value.constructor !== Function
+          ? value.constructor.name
+          : "";
+      const objAsString = `${name}{${
+        Object.entries(value).map(([k, v]) => {
+          return `"${k.replace('"', '\\"')}":${_stringify(v)}`;
+        }).join(",")
+      }}`;
+
+      objects.set(oIdx, objAsString);
+      if (oIdx === 0) {
+        return objAsString;
+      }
     }
     return `$${oIdx}`;
   }
 
-  const root = _stringify(value);
-  if (inc === 0) {
-    return root;
-  }
-  let result = "";
-  for (let i = 0; i < inc; i++) {
+  let result = _stringify(value);
+  for (let i = 1; i < inc; i++) {
     result += (i ? ";" : "") + objects.get(i);
   }
   return result;
