@@ -3,6 +3,7 @@ import { stringify } from "./stringify.ts";
 
 Deno.test("stringify scalar", () => {
   assertEquals(stringify(null), "null");
+  assertEquals(stringify(undefined), "undefined");
 
   assertEquals(stringify(true), "true");
   assertEquals(stringify(false), "false");

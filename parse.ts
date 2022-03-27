@@ -24,11 +24,14 @@ export function parse(code: string) {
   }
 
   function consume(char: string) {
-    if (buf[pos] === char) {
-      pos++;
-      return;
+    while (char.length) {
+      if (buf[pos] === char[0]) {
+        pos++;
+        char = char.slice(1);
+        continue;
+      }
+      throw error();
     }
-    throw error();
   }
 
   function error() {
@@ -67,26 +70,24 @@ export function parse(code: string) {
       case "9": {
         return parseNumber();
       }
+      case "u": {
+        pos++;
+        consume("ndefined");
+        return undefined;
+      }
       case "t": {
         pos++;
-        consume("r");
-        consume("u");
-        consume("e");
+        consume("rue");
         return true;
       }
       case "f": {
         pos++;
-        consume("a");
-        consume("l");
-        consume("s");
-        consume("e");
+        consume("alse");
         return false;
       }
       case "n": {
         pos++;
-        consume("u");
-        consume("l");
-        consume("l");
+        consume("ull");
         return null;
       }
     }
@@ -158,8 +159,7 @@ export function parse(code: string) {
   function parseNumber() {
     if (buf[pos] === "N") {
       pos++;
-      consume("a");
-      consume("N");
+      consume("aN");
       return NaN;
     }
 
@@ -171,13 +171,7 @@ export function parse(code: string) {
     }
     if (buf[pos] === "I") {
       pos++;
-      consume("n");
-      consume("f");
-      consume("i");
-      consume("n");
-      consume("i");
-      consume("t");
-      consume("y");
+      consume("nfinity");
       return isNeg ? -Infinity : Infinity;
     }
     if (NUM_CHARS.has(buf[pos])) {
