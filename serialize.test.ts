@@ -45,6 +45,11 @@ Deno.test("serialize array", () => {
     serialize([{ name: "wan2land" }, { name: "wan3land" }]),
     '[$1,$2];{"name":"wan2land"};{"name":"wan3land"}',
   );
+
+  assertEquals(
+    serialize({ users: [{ name: "wan2land" }, { name: "wan3land" }] }),
+    '{"users":$1};[$2,$3];{"name":"wan2land"};{"name":"wan3land"}',
+  );
 });
 
 Deno.test("serialize object", () => {

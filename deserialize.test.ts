@@ -54,6 +54,11 @@ Deno.test("deserialize array", () => {
     [{ name: "wan2land" }, { name: "wan3land" }],
   );
 
+  assertEquals(
+    deserialize('{"users":$1};[$2,$3];{"name":"wan2land"};{"name":"wan3land"}'),
+    { users: [{ name: "wan2land" }, { name: "wan3land" }] },
+  );
+
   // also support json
   assertEquals(
     deserialize('[{"name":"wan2land"},{"name":"wan3land"}]'),

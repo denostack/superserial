@@ -23,9 +23,10 @@ export function deserialize(
 ): any {
   const mapClasses = options.classes ?? {};
 
-  const refSymbol = Symbol();
   const refs = [] as any[];
+  const refPaths = [] as [paths: (string | number)[], index: number][];
   const buf = code;
+  const paths = [] as (string | number)[];
   let pos = 0;
 
   function white() {
@@ -122,7 +123,8 @@ export function deserialize(
       result += buf[pos++];
     }
     const index = +result;
-    return Object.assign(() => refs[index], { ref: refSymbol });
+    refPaths.push([paths.slice(), index]);
+    return null; // will replace! :-)
   }
 
   function parseArray() {
@@ -132,11 +134,20 @@ export function deserialize(
       pos++;
       return [];
     }
+    let index = 0;
+
+    paths.push(index++);
     const result = [parseJson()];
+    paths.pop();
+
     white();
     while (buf[pos] === ",") {
       pos++;
+
+      paths.push(index++);
       result.push(parseJson());
+      paths.pop();
+
       white();
     }
     if (buf[pos] === "]") {
@@ -161,7 +172,11 @@ export function deserialize(
         throw error();
       }
       pos++;
+
+      paths.push(key as string);
       result[key as string] = parseJson();
+      paths.pop();
+
       white();
       if (buf[pos] === ",") {
         pos++;
@@ -387,11 +402,17 @@ export function deserialize(
     return result;
   }
 
+  let index = 0;
+  paths.push(index++);
   refs.push(parseJson());
+  paths.pop();
+
   white();
   while (buf[pos] === ";") {
     consume(";");
+    paths.push(index++);
     refs.push(parseJson());
+    paths.pop();
     white();
   }
 
@@ -400,23 +421,16 @@ export function deserialize(
   }
 
   // resolve ref
-  function resolveRef(value: any) {
-    const typeofValue = typeof value;
-    if (typeofValue === "function" && value.ref === refSymbol) {
-      return value();
-    }
-    if (Array.isArray(value)) {
-      for (let i = 0; i < value.length; i++) {
-        value[i] = resolveRef(value[i]);
+  for (const [paths, refIndex] of refPaths) {
+    let base = refs as any;
+    for (const [pathIndex, path] of paths.entries()) {
+      if (pathIndex === paths.length - 1) {
+        base[path] = refs[refIndex];
+        break;
       }
+      base = base[path];
     }
-    if (typeofValue === "object" || typeofValue === "function") {
-      for (const key in value) {
-        value[key] = resolveRef(value[key]);
-      }
-    }
-    return value;
   }
 
-  return resolveRef(refs[0]);
+  return refs[0];
 }
