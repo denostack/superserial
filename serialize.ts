@@ -6,7 +6,7 @@ export function serialize(value: any): string {
   const objects = new Map<number, string>();
   const objectIndexMap = new Map<any, number>();
 
-  function _traverse(value: any): string {
+  function _stringifyAny(value: any): string {
     if (value === null) {
       return "null";
     }
@@ -41,26 +41,7 @@ export function serialize(value: any): string {
     if (typeof oIdx !== "number") {
       oIdx = inc++;
       objectIndexMap.set(value, oIdx);
-
-      let serialized: string;
-      if (Array.isArray(value)) {
-        serialized = `[${value.map(_traverse).join(",")}]`;
-      } else {
-        const name =
-          value.constructor !== Object && value.constructor !== Function
-            ? value.constructor.name
-            : "";
-
-        const serializeBase = typeof value[toSerialize] === "function"
-          ? value[toSerialize]()
-          : value;
-        serialized = `${name}{${
-          Object.entries(serializeBase).map(([k, v]) => {
-            return `"${k.replace('"', '\\"')}":${_traverse(v)}`;
-          }).join(",")
-        }}`;
-      }
-
+      const serialized = _stringifyRef(value);
       objects.set(oIdx, serialized);
       if (oIdx === 0) {
         return serialized;
@@ -69,7 +50,31 @@ export function serialize(value: any): string {
     return `$${oIdx}`;
   }
 
-  let result = _traverse(value);
+  function _stringifyRef(value: any): string {
+    if (Array.isArray(value)) {
+      return `[${value.map(_stringifyAny).join(",")}]`;
+    }
+    if (value instanceof Map) {
+      return `Map{"_":${_stringifyAny([...value.entries()])}}`;
+    }
+    if (value instanceof Set) {
+      return `Set{"_":${_stringifyAny([...value])}}`;
+    }
+    const name = value.constructor !== Object && value.constructor !== Function
+      ? value.constructor.name
+      : "";
+
+    const serializeBase = typeof value[toSerialize] === "function"
+      ? value[toSerialize]()
+      : value;
+    return `${name}{${
+      Object.entries(serializeBase).map(([k, v]) => {
+        return `"${k.replace('"', '\\"')}":${_stringifyAny(v)}`;
+      }).join(",")
+    }}`;
+  }
+
+  let result = _stringifyAny(value);
   for (let i = 1; i < inc; i++) {
     result += (i ? ";" : "") + objects.get(i);
   }

@@ -5,6 +5,9 @@ import { toDeserialize } from "./symbol.ts";
 const WS_CHARS = new Set(["\r", "\n", "\t", " "]);
 const NUM_CHARS = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 
+const REPLACER_MAP = (obj: { _: any }) => new Map(obj._);
+const REPLACER_SET = (obj: { _: any }) => new Set(obj._);
+
 const STRING_ESC: Record<string, string | undefined> = {
   '"': '"',
   "\\": "\\",
@@ -27,7 +30,13 @@ export function deserialize(
   const mapClasses = options.classes ?? {};
 
   const refs = [] as any[];
-  const refPaths = [] as [paths: (string | number)[], index: number][];
+  const replacers = [[], []] as [
+    paths: (string | number)[],
+    replacer: (origin: any) => any,
+  ][][];
+
+  const REPLACER_REF = (index: number) => refs[index];
+
   const buf = code;
   const paths = [] as (string | number)[];
   let pos = 0;
@@ -102,14 +111,19 @@ export function deserialize(
         if (buf[pos] === "{") {
           let obj = parseObject();
           const baseClass = mapClasses[name] ?? null;
-          if (name && !baseClass) {
-            console.warn(`Class ${name} is not defined. It will be ignored.`);
-          }
           if (baseClass) {
             if (typeof (baseClass as any)[toDeserialize] === "function") {
               obj = (baseClass as any)[toDeserialize](obj);
             }
             Object.setPrototypeOf(obj, baseClass.prototype);
+          } else if (name === "Map") {
+            replacers[1].push([paths.slice(), REPLACER_MAP]);
+            return obj;
+          } else if (name === "Set") {
+            replacers[1].push([paths.slice(), REPLACER_SET]);
+            return obj;
+          } else if (name) {
+            console.warn(`Class ${name} is not defined. It will be ignored.`);
           }
           return obj;
         }
@@ -126,8 +140,8 @@ export function deserialize(
       result += buf[pos++];
     }
     const index = +result;
-    refPaths.push([paths.slice(), index]);
-    return null; // will replace! :-)
+    replacers[0].push([paths.slice(), REPLACER_REF]);
+    return index;
   }
 
   function parseArray() {
@@ -423,15 +437,16 @@ export function deserialize(
     throw error();
   }
 
-  // resolve ref
-  for (const [paths, refIndex] of refPaths) {
-    let base = refs as any;
-    for (const [pathIndex, path] of paths.entries()) {
-      if (pathIndex === paths.length - 1) {
-        base[path] = refs[refIndex];
-        break;
+  for (const groups of replacers) {
+    for (const [paths, replacer] of groups) {
+      let base = refs as any;
+      for (const [pathIndex, path] of paths.entries()) {
+        if (pathIndex === paths.length - 1) {
+          base[path] = replacer(base[path]);
+          break;
+        }
+        base = base[path];
       }
-      base = base[path];
     }
   }
 

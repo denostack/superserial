@@ -35,6 +35,27 @@ Deno.test("deserialize extend scalar", () => {
   assertEquals(deserialize("-Infinity"), -Infinity);
 });
 
+Deno.test("deserialize builtin Map", () => {
+  assertEquals(
+    deserialize(
+      'Map{"_":$1};[$2,$3,$4,$5];["string","this is string"];[true,"boolean"];[null,"null"];[$6,"object"];{}',
+    ),
+    new Map<any, any>([
+      ["string", "this is string"],
+      [true, "boolean"],
+      [null, "null"],
+      [{}, "object"],
+    ]),
+  );
+});
+
+Deno.test("deserialize builtin Set", () => {
+  assertEquals(
+    deserialize('Set{"_":$1};[1,2,3,4,5]'),
+    new Set([1, 2, 3, 4, 5]),
+  );
+});
+
 Deno.test("deserialize regex", () => {
   assertEquals(deserialize("/abc/"), /abc/);
 
@@ -48,6 +69,13 @@ Deno.test("deserialize regex", () => {
 
 Deno.test("deserialize array", () => {
   assertEquals(deserialize("[]"), []);
+
+  assertEquals(
+    deserialize(
+      '[$1,$7,$8];[$2,$5];[$3,2,"",false,$4];{};[];[$6];[];[1,2];[1]',
+    ),
+    [[[{}, 2, "", false, []], [[]]], [1, 2], [1]],
+  );
 
   assertEquals(
     deserialize('[$1,$2];{"name":"wan2land"};{"name":"wan3land"}'),

@@ -34,6 +34,24 @@ Deno.test("serialize extend scalar", () => {
   assertEquals(serialize(-Infinity), "-Infinity");
 });
 
+Deno.test("serialize builtin Map", () => {
+  assertEquals(
+    serialize(
+      new Map<any, any>([
+        ["string", "this is string"],
+        [true, "boolean"],
+        [null, "null"],
+        [{}, "object"],
+      ]),
+    ),
+    'Map{"_":$1};[$2,$3,$4,$5];["string","this is string"];[true,"boolean"];[null,"null"];[$6,"object"];{}',
+  );
+});
+
+Deno.test("serialize builtin Set", () => {
+  assertEquals(serialize(new Set([1, 2, 3, 4, 5])), 'Set{"_":$1};[1,2,3,4,5]');
+});
+
 Deno.test("serialize regex", () => {
   assertEquals(serialize(/abc/), "/abc/");
 
@@ -42,6 +60,11 @@ Deno.test("serialize regex", () => {
 
 Deno.test("serialize array", () => {
   assertEquals(serialize([]), "[]");
+
+  assertEquals(
+    serialize([[[{}, 2, "", false, []], [[]]], [1, 2], [1]]),
+    '[$1,$7,$8];[$2,$5];[$3,2,"",false,$4];{};[];[$6];[];[1,2];[1]',
+  );
 
   assertEquals(
     serialize([{ name: "wan2land" }, { name: "wan3land" }]),

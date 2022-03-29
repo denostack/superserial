@@ -84,6 +84,11 @@ console.log(output);
 // {"string":"string","true":true,"false":false,"number":3.141592,"null":null,"und":undefined,"nan":NaN,"inf":Infinity,"ninf":-Infinity,"regex":/abc/gim}
 ```
 
+### Built-in Classes
+
+- `Map` (built-in)
+- `Set` (built-in)
+
 ### Circular Reference
 
 Existing JSON functions do not support circular references, but **superserial**
