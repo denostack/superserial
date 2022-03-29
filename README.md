@@ -59,10 +59,10 @@ import { Serializer } from "superserial";
 
 ### Extending types
 
-- `undefined`
-- `BigInt`
-- `RegExp`
-- `Number`
+- Undefined (`typeof val === 'undefined'`)
+- Symbol (`typeof val === 'symbol'`)
+- BigInt (`typeof val === 'bigint'`)
+- Number
   - `NaN`
   - `Infinity`, `-Infinity`
 
@@ -89,6 +89,7 @@ console.log(output);
 - `Map`
 - `Set`
 - `Date`
+- `RegExp`
 
 ### Circular Reference
 

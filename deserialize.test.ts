@@ -1,6 +1,9 @@
+// deno-lint-ignore-file no-explicit-any
+
 import {
   assertEquals,
   assertInstanceOf,
+  assertNotStrictEquals,
   assertStrictEquals,
 } from "https://deno.land/std@0.131.0/testing/asserts.ts";
 import { assertSpyCall, spy } from "https://deno.land/x/mock@0.15.0/mod.ts";
@@ -35,10 +38,33 @@ Deno.test("deserialize extend scalar", () => {
   assertEquals(deserialize("-Infinity"), -Infinity);
 });
 
+Deno.test("deserialize symbol", () => {
+  const symbol1 = deserialize("Symbol()");
+  assertEquals(typeof symbol1, "symbol");
+  assertEquals(symbol1.description, undefined);
+
+  const symbol2 = deserialize('Symbol("desc1")');
+  assertEquals(typeof symbol2, "symbol");
+  assertEquals(symbol2.description, "desc1");
+
+  const deserialized = deserialize(
+    '[$1,$2,$3,$4];Symbol("sym1");Symbol("sym2");Symbol("sym1");[$2]',
+  );
+  assertEquals(deserialized[0].description, "sym1");
+  assertEquals(deserialized[1].description, "sym2");
+  assertEquals(deserialized[2].description, "sym1");
+
+  assertNotStrictEquals(deserialized[0], deserialized[2]);
+  assertStrictEquals(
+    deserialized[1],
+    deserialized[3][0],
+  );
+});
+
 Deno.test("deserialize builtin Map", () => {
   assertEquals(
     deserialize(
-      'Map{"_":$1};[$2,$3,$4,$5];["string","this is string"];[true,"boolean"];[null,"null"];[$6,"object"];{}',
+      'Map([$1,$2,$3,$4]);["string","this is string"];[true,"boolean"];[null,"null"];[$5,"object"];{}',
     ),
     new Map<any, any>([
       ["string", "this is string"],
@@ -51,13 +77,13 @@ Deno.test("deserialize builtin Map", () => {
 
 Deno.test("deserialize builtin Set", () => {
   assertEquals(
-    deserialize('Set{"_":$1};[1,2,3,4,5]'),
+    deserialize("Set([1,2,3,4,5])"),
     new Set([1, 2, 3, 4, 5]),
   );
 });
 
-Deno.test("serialize builtin Date", () => {
-  assertEquals(deserialize('Date{"_":1640962800000}'), new Date(1640962800000));
+Deno.test("deserialize builtin Date", () => {
+  assertEquals(deserialize("Date(1640962800000)"), new Date(1640962800000));
 });
 
 Deno.test("deserialize regex", () => {

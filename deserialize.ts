@@ -5,9 +5,8 @@ import { toDeserialize } from "./symbol.ts";
 const WS_CHARS = new Set(["\r", "\n", "\t", " "]);
 const NUM_CHARS = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 
-const REPLACER_MAP = (obj: { _: any }) => new Map(obj._);
-const REPLACER_SET = (obj: { _: any }) => new Set(obj._);
-const REPLACER_DATE = (obj: { _: any }) => new Date(obj._);
+const REPLACER_MAP = (obj: any) => new Map(obj);
+const REPLACER_SET = (obj: any) => new Set(obj);
 
 const STRING_ESC: Record<string, string | undefined> = {
   '"': '"',
@@ -117,19 +116,20 @@ export function deserialize(
               obj = (baseClass as any)[toDeserialize](obj);
             }
             Object.setPrototypeOf(obj, baseClass.prototype);
-          } else if (name === "Map") {
-            replacers[1].push([paths.slice(), REPLACER_MAP]);
-            return obj;
-          } else if (name === "Set") {
-            replacers[1].push([paths.slice(), REPLACER_SET]);
-            return obj;
-          } else if (name === "Date") {
-            replacers[1].push([paths.slice(), REPLACER_DATE]);
-            return obj;
           } else if (name) {
             console.warn(`Class ${name} is not defined. It will be ignored.`);
           }
           return obj;
+        } else if (buf[pos] === "(") {
+          switch (name) {
+            case "Map":
+            case "Set":
+            case "Date":
+            case "Symbol":
+              return parseBuiltIn(name);
+            default:
+              throw error();
+          }
         }
       }
     }
@@ -209,6 +209,34 @@ export function deserialize(
         return result;
       }
       throw error();
+    }
+  }
+
+  function parseBuiltIn(name: "Map" | "Set" | "Date" | "Symbol") {
+    pos++;
+    white();
+    let value = undefined as any;
+    if (buf[pos] === ")") {
+      pos++;
+    } else {
+      value = parseJson();
+      white();
+      if (buf[pos] !== ")") {
+        throw error();
+      }
+      pos++;
+    }
+
+    if (name === "Map") {
+      replacers[1].push([paths.slice(), REPLACER_MAP]);
+      return value;
+    } else if (name === "Set") {
+      replacers[1].push([paths.slice(), REPLACER_SET]);
+      return value;
+    } else if (name === "Date") {
+      return new Date(value);
+    } else if (name === "Symbol") {
+      return Symbol(value);
     }
   }
 

@@ -51,17 +51,23 @@ export function serialize(value: any): string {
   }
 
   function _stringifyRef(value: any): string {
+    if (typeof value === "symbol") {
+      const description = (value.description ?? null) === null
+        ? ""
+        : _stringifyAny(value.description);
+      return `Symbol(${description})`;
+    }
     if (Array.isArray(value)) {
       return `[${value.map(_stringifyAny).join(",")}]`;
     }
     if (value instanceof Map) {
-      return `Map{"_":${_stringifyAny([...value.entries()])}}`;
+      return `Map([${[...value.entries()].map(_stringifyAny).join(",")}])`;
     }
     if (value instanceof Set) {
-      return `Set{"_":${_stringifyAny([...value])}}`;
+      return `Set([${[...value].map(_stringifyAny).join(",")}])`;
     }
     if (value instanceof Date) {
-      return `Date{"_":${_stringifyAny(value.getTime())}}`;
+      return `Date(${_stringifyAny(value.getTime())})`;
     }
     const name = value.constructor !== Object && value.constructor !== Function
       ? value.constructor.name

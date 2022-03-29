@@ -34,6 +34,18 @@ Deno.test("serialize extend scalar", () => {
   assertEquals(serialize(-Infinity), "-Infinity");
 });
 
+Deno.test("serialize symbol", () => {
+  assertEquals(serialize(Symbol()), "Symbol()");
+  assertEquals(serialize(Symbol("desc1")), 'Symbol("desc1")');
+
+  const symbol1 = Symbol("sym1");
+  const symbol2 = Symbol("sym2");
+  assertEquals(
+    serialize([symbol1, symbol2, Symbol("sym1"), [symbol2]]),
+    '[$1,$2,$3,$4];Symbol("sym1");Symbol("sym2");Symbol("sym1");[$2]',
+  );
+});
+
 Deno.test("serialize builtin Map", () => {
   assertEquals(
     serialize(
@@ -44,16 +56,16 @@ Deno.test("serialize builtin Map", () => {
         [{}, "object"],
       ]),
     ),
-    'Map{"_":$1};[$2,$3,$4,$5];["string","this is string"];[true,"boolean"];[null,"null"];[$6,"object"];{}',
+    'Map([$1,$2,$3,$4]);["string","this is string"];[true,"boolean"];[null,"null"];[$5,"object"];{}',
   );
 });
 
 Deno.test("serialize builtin Set", () => {
-  assertEquals(serialize(new Set([1, 2, 3, 4, 5])), 'Set{"_":$1};[1,2,3,4,5]');
+  assertEquals(serialize(new Set([1, 2, 3, 4, 5])), "Set([1,2,3,4,5])");
 });
 
 Deno.test("serialize builtin Date", () => {
-  assertEquals(serialize(new Date(1640962800000)), 'Date{"_":1640962800000}');
+  assertEquals(serialize(new Date(1640962800000)), "Date(1640962800000)");
 });
 
 Deno.test("serialize regex", () => {
