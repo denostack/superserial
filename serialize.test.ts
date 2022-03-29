@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-explicit-any
+
 import { assertEquals } from "https://deno.land/std@0.131.0/testing/asserts.ts";
 import { serialize } from "./serialize.ts";
 import { toSerialize } from "./symbol.ts";

@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-explicit-any
+
 import { toDeserialize } from "./symbol.ts";
 
 const WS_CHARS = new Set(["\r", "\n", "\t", " "]);
@@ -14,7 +16,8 @@ const STRING_ESC: Record<string, string | undefined> = {
 };
 
 export interface DeserializeOptions {
-  classes?: { [className: string]: Function };
+  // deno-lint-ignore ban-types
+  classes?: { [className: string]: ((new (...args: any[]) => any) | Function) };
 }
 
 export function deserialize(
@@ -258,7 +261,7 @@ export function deserialize(
           pos++;
           let uffff = 0;
           for (let i = 0; i < 4; i++) {
-            let hex = parseInt(buf[pos], 16);
+            const hex = parseInt(buf[pos], 16);
             if (!isFinite(hex)) {
               throw error();
             }

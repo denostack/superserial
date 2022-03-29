@@ -1,8 +1,11 @@
+// deno-lint-ignore-file no-explicit-any
+
 import { serialize } from "./serialize.ts";
 import { deserialize } from "./deserialize.ts";
 
 export interface SerializerOptions {
-  classes?: { [className: string]: Function };
+  // deno-lint-ignore ban-types
+  classes?: { [className: string]: ((new (...args: any[]) => any) | Function) };
 }
 
 export class Serializer {

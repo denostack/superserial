@@ -1,8 +1,9 @@
+// deno-lint-ignore-file no-explicit-any
 import { toSerialize } from "./symbol.ts";
 
 export function serialize(value: any): string {
   let inc = 0;
-  const objects = new Map<number, any>();
+  const objects = new Map<number, string>();
   const objectIndexMap = new Map<any, number>();
 
   function _traverse(value: any): string {

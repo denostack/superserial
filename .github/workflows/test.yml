@@ -19,8 +19,10 @@ jobs:
         uses: denoland/setup-deno@v1
         with:
           deno-version: ${{ matrix.deno-version }}
-      - name: Lint Deno Module
+      - name: Format Deno Module
         run: deno fmt --check
+      - name: Lint Deno Module
+        run: deno lint
       - name: Build Deno Module
         run: deno run --reload mod.ts
       - name: Test Deno Module
