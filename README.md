@@ -86,8 +86,9 @@ console.log(output);
 
 ### Built-in Classes
 
-- `Map` (built-in)
-- `Set` (built-in)
+- `Map`
+- `Set`
+- `Date`
 
 ### Circular Reference
 

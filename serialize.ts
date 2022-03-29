@@ -60,6 +60,9 @@ export function serialize(value: any): string {
     if (value instanceof Set) {
       return `Set{"_":${_stringifyAny([...value])}}`;
     }
+    if (value instanceof Date) {
+      return `Date{"_":${_stringifyAny(value.getTime())}}`;
+    }
     const name = value.constructor !== Object && value.constructor !== Function
       ? value.constructor.name
       : "";

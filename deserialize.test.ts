@@ -56,6 +56,10 @@ Deno.test("deserialize builtin Set", () => {
   );
 });
 
+Deno.test("serialize builtin Date", () => {
+  assertEquals(deserialize('Date{"_":1640962800000}'), new Date(1640962800000));
+});
+
 Deno.test("deserialize regex", () => {
   assertEquals(deserialize("/abc/"), /abc/);
 
