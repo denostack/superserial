@@ -1,12 +1,21 @@
 # superserial
 
+<p>
+  <a href="https://npmcharts.com/compare/superserial?minimal=true"><img alt="Downloads" src="https://img.shields.io/npm/dt/superserial.svg?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/superserial"><img alt="Version" src="https://img.shields.io/npm/v/superserial.svg?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/superserial"><img alt="License" src="https://img.shields.io/npm/l/superserial.svg?style=flat-square" /></a>
+  <img alt="Language Typescript" src="https://img.shields.io/badge/language-Typescript-007acc.svg?style=flat-square" />
+</p>
+
 After data transfer, when the object needs to be restored, `JSON` has many
 limitations. It does not support values such as `Infinity` and `NaN`, and does
 not provide circular references.
 
 **superserial** provides serialization in any way you can imagine.
 
-## Useage
+## Usage
+
+### with Deno
 
 ```ts
 import { Serializer } from "https://deno.land/x/superserial/mod.ts";
@@ -28,12 +37,18 @@ console.log(serialized);
 // [$1,$2];{"self":$1,"siblings":$0};{"self":$2,"siblings":$0}
 ```
 
-### in Node.js
+### with Node.js & Browser
+
+**Install**
+
+```bash
+npm install superserial
+```
 
 ```ts
 import { Serializer } from "superserial";
 
-//
+// Usage is as above :-)
 ```
 
 ## Index
