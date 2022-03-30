@@ -1,91 +1,220 @@
 // deno-lint-ignore-file no-explicit-any
 import { toSerialize } from "./symbol.ts";
 
-export function serialize(value: any): string {
+export interface SerializeOptions {
+  prettify?: boolean;
+}
+
+export function serialize(value: any, options: SerializeOptions = {}): string {
+  let output = "";
+
   let inc = 0;
-  const objects = new Map<number, string>();
+  const prettify = options.prettify ?? false;
+  let depth = 0;
+
+  const objectMap = new Map<number, any>();
   const objectIndexMap = new Map<any, number>();
 
-  function _stringifyAny(value: any): string {
+  function _stringifyString(value: string): boolean {
+    output += `"${value.replace('"', '\\"')}"`; // " 문자는 escape 해야합니다.
+    return true;
+  }
+  function _stringifyScalar(value: any): boolean {
     if (value === null) {
-      return "null";
+      output += "null";
+      return true;
     }
     const typeofValue = typeof value;
     if (typeofValue === "undefined") {
-      return "undefined";
+      output += "undefined";
+      return true;
     }
     if (typeofValue === "number") {
       if (Number.isNaN(value)) {
-        return "NaN";
+        output += "NaN";
+        return true;
       }
       if (!Number.isFinite(value)) {
-        return value > 0 ? "Infinity" : "-Infinity";
+        output += value > 0 ? "Infinity" : "-Infinity";
+        return true;
       }
-      return `${value}`;
+      output += `${value}`;
+      return true;
     }
     if (typeofValue === "bigint") {
-      return `${value}n`;
+      output += `${value}n`;
+      return true;
     }
     if (typeofValue === "boolean") {
-      return value ? "true" : "false";
+      output += value ? "true" : "false";
+      return true;
     }
     if (typeofValue === "string") {
-      return `"${value.replace('"', '\\"')}"`; // " 문자는 escape 해야합니다.
+      return _stringifyString(value);
     }
+    return false;
+  }
 
-    if (value instanceof RegExp) {
-      return value.toString();
+  function _stringifyRoot(value: any): boolean {
+    if (_stringifyScalar(value)) {
+      return true;
+    }
+    return _stringifyRef(value);
+  }
+
+  function _stringifyAny(value: any): boolean {
+    if (_stringifyScalar(value)) {
+      return true;
     }
 
     let oIdx = objectIndexMap.get(value);
     if (typeof oIdx !== "number") {
       oIdx = inc++;
       objectIndexMap.set(value, oIdx);
-      const serialized = _stringifyRef(value);
-      objects.set(oIdx, serialized);
-      if (oIdx === 0) {
-        return serialized;
-      }
+      objectMap.set(oIdx, value);
     }
-    return `$${oIdx}`;
+    output += `$${oIdx}`;
+    return true;
   }
 
-  function _stringifyRef(value: any): string {
+  function _stringifyRef(value: any): boolean {
+    // simple :-)
     if (typeof value === "symbol") {
-      const description = (value.description ?? null) === null
-        ? ""
-        : _stringifyAny(value.description);
-      return `Symbol(${description})`;
+      output += "Symbol(";
+      if (value.description) {
+        _stringifyString(value.description);
+      }
+      output += ")";
+      return true;
     }
+
+    if (value instanceof RegExp) {
+      output += value.toString();
+      return true;
+    }
+
+    if (value instanceof Date) {
+      output += "Date(";
+      _stringifyAny(value.getTime());
+      output += ")";
+      return true;
+    }
+
+    // complex :D
+    if (prettify) {
+      output += "  ".repeat(depth);
+    }
+
     if (Array.isArray(value)) {
-      return `[${value.map(_stringifyAny).join(",")}]`;
+      _stringifyListStart("[");
+      _stringifyList(value);
+      _stringifyListEnd("]");
+      return true;
     }
+
     if (value instanceof Map) {
-      return `Map([${[...value.entries()].map(_stringifyAny).join(",")}])`;
+      _stringifyListStart("Map([");
+      _stringifyList([...value.entries()]);
+      _stringifyListEnd("])");
+      return true;
     }
     if (value instanceof Set) {
-      return `Set([${[...value].map(_stringifyAny).join(",")}])`;
+      _stringifyListStart("Set([");
+      _stringifyList([...value]);
+      _stringifyListEnd("])");
+      return true;
     }
-    if (value instanceof Date) {
-      return `Date(${_stringifyAny(value.getTime())})`;
-    }
+
     const name = value.constructor !== Object && value.constructor !== Function
       ? value.constructor.name
       : "";
 
-    const serializeBase = typeof value[toSerialize] === "function"
-      ? value[toSerialize]()
-      : value;
-    return `${name}{${
-      Object.entries(serializeBase).map(([k, v]) => {
-        return `"${k.replace('"', '\\"')}":${_stringifyAny(v)}`;
-      }).join(",")
-    }}`;
+    _stringifyListStart(prettify && name ? `${name} {` : `${name}{`);
+    _stringifyKv(
+      Object.entries(
+        typeof value[toSerialize] === "function" ? value[toSerialize]() : value,
+      ),
+    );
+    _stringifyListEnd("}");
+    return true;
   }
 
-  let result = _stringifyAny(value);
+  const _stringifyListStart = prettify
+    ? (name: string) => {
+      output += name;
+      output += "\n";
+      depth++;
+    }
+    : (name: string) => {
+      output += name;
+      depth++;
+    };
+
+  const _stringifyListEnd = prettify
+    ? (name: string) => {
+      depth--;
+      output += "\n";
+      output += "  ".repeat(depth);
+      output += name;
+    }
+    : (name: string) => {
+      depth--;
+      output += name;
+    };
+
+  const _stringifyList = prettify
+    ? (value: any[]) => {
+      for (let i = 0; i < value.length; i++) {
+        if (i > 0) {
+          output += ",\n";
+        }
+        output += "  ".repeat(depth);
+        _stringifyAny(value[i]);
+      }
+    }
+    : (value: any[]) => {
+      for (let i = 0; i < value.length; i++) {
+        if (i > 0) {
+          output += ",";
+        }
+        _stringifyAny(value[i]);
+      }
+    };
+
+  const _stringifyKv = prettify
+    ? (value: [string, any][]) => {
+      for (let i = 0; i < value.length; i++) {
+        if (i > 0) {
+          output += ",\n";
+        }
+        output += "  ".repeat(depth);
+        _stringifyString(value[i][0]);
+        output += ": ";
+        _stringifyAny(value[i][1]);
+      }
+    }
+    : (value: [string, any][]) => {
+      for (let i = 0; i < value.length; i++) {
+        if (i > 0) {
+          output += ",";
+        }
+        _stringifyString(value[i][0]);
+        output += ":";
+        _stringifyAny(value[i][1]);
+      }
+    };
+
+  inc++;
+  objectIndexMap.set(value, 0);
+  objectMap.set(0, value);
+
+  _stringifyRoot(value);
   for (let i = 1; i < inc; i++) {
-    result += (i ? ";" : "") + objects.get(i);
+    output += ";";
+    if (prettify) {
+      output += "\n";
+    }
+    _stringifyRoot(objectMap.get(i));
   }
-  return result;
+  return output;
 }
