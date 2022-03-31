@@ -113,15 +113,15 @@ export function serialize(value: any, options: SerializeOptions = {}): string {
     }
 
     if (value instanceof Map) {
-      _stringifyListStart("Map([");
-      _stringifyList([...value.entries()]);
-      _stringifyListEnd("])");
+      _stringifyListStart("Map(");
+      _stringifyMap([...value.entries()]);
+      _stringifyListEnd(")");
       return true;
     }
     if (value instanceof Set) {
-      _stringifyListStart("Set([");
+      _stringifyListStart("Set(");
       _stringifyList([...value]);
-      _stringifyListEnd("])");
+      _stringifyListEnd(")");
       return true;
     }
 
@@ -180,7 +180,28 @@ export function serialize(value: any, options: SerializeOptions = {}): string {
         _stringifyAny(value[i]);
       }
     };
-
+  const _stringifyMap = prettify
+    ? (value: [string, any][]) => {
+      for (let i = 0; i < value.length; i++) {
+        if (i > 0) {
+          output += ",\n";
+        }
+        output += "  ".repeat(depth);
+        _stringifyAny(value[i][0]);
+        output += " => ";
+        _stringifyAny(value[i][1]);
+      }
+    }
+    : (value: [string, any][]) => {
+      for (let i = 0; i < value.length; i++) {
+        if (i > 0) {
+          output += ",";
+        }
+        _stringifyAny(value[i][0]);
+        output += "=>";
+        _stringifyAny(value[i][1]);
+      }
+    };
   const _stringifyKv = prettify
     ? (value: [string, any][]) => {
       for (let i = 0; i < value.length; i++) {

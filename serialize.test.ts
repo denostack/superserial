@@ -46,7 +46,17 @@ Deno.test("serialize symbol", () => {
   );
 });
 
-Deno.test("serialize builtin Map", () => {
+Deno.test("serialize built-in Set", () => {
+  assertEquals(serialize(new Set([1, 2, 3, 4, 5])), "Set(1,2,3,4,5)");
+});
+
+Deno.test("serialize built-in Set circular", () => {
+  const set = new Set();
+  set.add(set);
+  assertEquals(serialize(set), "Set($0)");
+});
+
+Deno.test("serialize built-in Map", () => {
   assertEquals(
     serialize(
       new Map<any, any>([
@@ -56,15 +66,11 @@ Deno.test("serialize builtin Map", () => {
         [{}, "object"],
       ]),
     ),
-    'Map([$1,$2,$3,$4]);["string","this is string"];[true,"boolean"];[null,"null"];[$5,"object"];{}',
+    'Map("string"=>"this is string",true=>"boolean",null=>"null",$1=>"object");{}',
   );
 });
 
-Deno.test("serialize builtin Set", () => {
-  assertEquals(serialize(new Set([1, 2, 3, 4, 5])), "Set([1,2,3,4,5])");
-});
-
-Deno.test("serialize builtin Date", () => {
+Deno.test("serialize built-in Date", () => {
   assertEquals(serialize(new Date(1640962800000)), "Date(1640962800000)");
 });
 
