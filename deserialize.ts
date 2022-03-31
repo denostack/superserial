@@ -5,9 +5,6 @@ import { toDeserialize } from "./symbol.ts";
 const WS_CHARS = new Set(["\r", "\n", "\t", " "]);
 const NUM_CHARS = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 
-const REPLACER_MAP = (obj: any) => new Map(obj);
-const REPLACER_SET = (obj: any) => new Set(obj);
-
 const STRING_ESC: Record<string, string | undefined> = {
   '"': '"',
   "\\": "\\",
@@ -30,15 +27,9 @@ export function deserialize(
   const mapClasses = options.classes ?? {};
 
   const refs = [] as any[];
-  const replacers = [[], []] as [
-    paths: (string | number)[],
-    replacer: (origin: any) => any,
-  ][][];
-
-  const REPLACER_REF = (index: number) => refs[index];
-
+  const refsIndex = new Map<symbol, number>();
   const buf = code;
-  const paths = [] as (string | number)[];
+
   let pos = 0;
 
   function white() {
@@ -47,11 +38,18 @@ export function deserialize(
     }
   }
 
+  function consume1(char: string) {
+    if (buf[pos] === char) {
+      pos++;
+      return true;
+    }
+    return false;
+  }
+
   function consume(char: string) {
-    while (char.length) {
-      if (buf[pos] === char[0]) {
+    for (let i = 0; i < char.length; i++) {
+      if (buf[pos] === char[i]) {
         pos++;
-        char = char.slice(1);
         continue;
       }
       throw error();
@@ -66,7 +64,7 @@ export function deserialize(
     );
   }
 
-  function parseJson(): any {
+  function parseAny(): any {
     white();
     switch (buf[pos]) {
       case "$":
@@ -123,10 +121,13 @@ export function deserialize(
         } else if (buf[pos] === "(") {
           switch (name) {
             case "Map":
+              return parseBuiltInMap();
             case "Set":
+              return parseBuiltInSet();
             case "Date":
+              return parseBuiltInDate();
             case "Symbol":
-              return parseBuiltIn(name);
+              return parseBuiltInSymbol();
             default:
               throw error();
           }
@@ -144,8 +145,9 @@ export function deserialize(
       result += buf[pos++];
     }
     const index = +result;
-    replacers[0].push([paths.slice(), REPLACER_REF]);
-    return index;
+    const symbol = Symbol(`$${index}`);
+    refsIndex.set(symbol, index);
+    return symbol;
   }
 
   function parseArray() {
@@ -155,20 +157,14 @@ export function deserialize(
       pos++;
       return [];
     }
-    let index = 0;
 
-    paths.push(index++);
-    const result = [parseJson()];
-    paths.pop();
+    const result = [] as any[];
+    result.push(parseAny());
 
     white();
     while (buf[pos] === ",") {
       pos++;
-
-      paths.push(index++);
-      result.push(parseJson());
-      paths.pop();
-
+      result.push(parseAny());
       white();
     }
     if (buf[pos] === "]") {
@@ -193,11 +189,7 @@ export function deserialize(
         throw error();
       }
       pos++;
-
-      paths.push(key as string);
-      result[key as string] = parseJson();
-      paths.pop();
-
+      result[key as string] = parseAny();
       white();
       if (buf[pos] === ",") {
         pos++;
@@ -212,34 +204,105 @@ export function deserialize(
     }
   }
 
-  function parseBuiltIn(name: "Map" | "Set" | "Date" | "Symbol") {
+  function parseBuiltInMap() {
+    pos++;
+    white();
+    if (buf[pos] === ")") {
+      pos++;
+      return new Map();
+    }
+    const pairs = [] as [any, any][];
+    while (1) {
+      const key = parseAny();
+      white();
+      consume("=>");
+      white();
+      const value = parseAny();
+      pairs.push([key, value]);
+      white();
+      if (buf[pos] === ",") {
+        pos++;
+        white();
+        continue;
+      }
+      if (buf[pos] === ")") {
+        pos++;
+        return new Map(pairs);
+      }
+      throw error();
+    }
+  }
+
+  function parseBuiltInSet() {
+    pos++;
+    white();
+    if (buf[pos] === ")") {
+      pos++;
+      return new Set();
+    }
+
+    const result = [] as any[];
+    result.push(parseAny());
+
+    white();
+    while (buf[pos] === ",") {
+      pos++;
+      result.push(parseAny());
+      white();
+    }
+    if (buf[pos] === ")") {
+      pos++;
+      return new Set(result);
+    }
+    throw error();
+  }
+
+  function parseBuiltInDate() {
+    pos++;
+    white();
+    switch (buf[pos]) {
+      case "-":
+      case "0":
+      case "1":
+      case "2":
+      case "3":
+      case "4":
+      case "5":
+      case "6":
+      case "7":
+      case "8":
+      case "9": {
+        const value = parseNumber();
+        white();
+        if (buf[pos] !== ")") {
+          throw error();
+        }
+        pos++;
+        return new Date(value as number);
+      }
+    }
+    throw error();
+  }
+
+  function parseBuiltInSymbol() {
     pos++;
     white();
     let value = undefined as any;
     if (buf[pos] === ")") {
       pos++;
-    } else {
-      value = parseJson();
+    } else if (buf[pos] === '"') {
+      value = parseString();
       white();
       if (buf[pos] !== ")") {
         throw error();
       }
       pos++;
+    } else {
+      throw error();
     }
 
-    if (name === "Map") {
-      replacers[1].push([paths.slice(), REPLACER_MAP]);
-      return value;
-    } else if (name === "Set") {
-      replacers[1].push([paths.slice(), REPLACER_SET]);
-      return value;
-    } else if (name === "Date") {
-      return new Date(value);
-    } else if (name === "Symbol") {
-      return Symbol(value);
-    }
+    return Symbol(value);
   }
-
   function parseNumber() {
     let result = "";
     let isNeg = false;
@@ -451,17 +514,11 @@ export function deserialize(
     return result;
   }
 
-  let index = 0;
-  paths.push(index++);
-  refs.push(parseJson());
-  paths.pop();
+  refs.push(parseAny());
 
   white();
-  while (buf[pos] === ";") {
-    consume(";");
-    paths.push(index++);
-    refs.push(parseJson());
-    paths.pop();
+  while (consume1(";")) {
+    refs.push(parseAny());
     white();
   }
 
@@ -469,18 +526,80 @@ export function deserialize(
     throw error();
   }
 
-  for (const groups of replacers) {
-    for (const [paths, replacer] of groups) {
-      let base = refs as any;
-      for (const [pathIndex, path] of paths.entries()) {
-        if (pathIndex === paths.length - 1) {
-          base[path] = replacer(base[path]);
-          break;
+  const replaced = new Set();
+  function replacer(value: any) {
+    if (replaced.has(value)) {
+      return;
+    }
+    if (typeof value === "undefined") {
+      return;
+    }
+    if (value === null) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((v, i) => {
+        const refIndex = typeof v === "symbol" ? refsIndex.get(v) : null;
+        if (typeof refIndex === "number") {
+          value[i] = refs[refIndex];
+        } else {
+          replacer(v);
         }
-        base = base[path];
+      });
+      replaced.add(value);
+      return;
+    }
+    if (value instanceof Set) {
+      [...value].forEach((v) => {
+        const refIndex = typeof v === "symbol" ? refsIndex.get(v) : null;
+        if (typeof refIndex === "number") {
+          value.delete(v);
+          value.add(refs[refIndex]);
+        } else {
+          replacer(v);
+        }
+      });
+      replaced.add(value);
+      return;
+    }
+    if (value instanceof Map) {
+      [...value.entries()].forEach(([k, v]) => {
+        {
+          const refIndex = typeof k === "symbol" ? refsIndex.get(k) : null;
+          if (typeof refIndex === "number") {
+            value.delete(k);
+            value.set(refs[refIndex], v);
+            k = refs[refIndex];
+          } else {
+            replacer(k);
+          }
+        }
+        {
+          const refIndex = typeof v === "symbol" ? refsIndex.get(v) : null;
+          if (typeof refIndex === "number") {
+            value.set(k, refs[refIndex]);
+          } else {
+            replacer(v);
+          }
+        }
+      });
+      replaced.add(value);
+      return;
+    }
+    if (typeof value === "object") {
+      for (const [k, v] of Object.entries(value)) {
+        const refIndex = typeof v === "symbol" ? refsIndex.get(v) : null;
+        if (typeof refIndex === "number") {
+          value[k] = refs[refIndex];
+        } else {
+          replacer(v);
+        }
       }
+      replaced.add(value);
+      return;
     }
   }
+  replacer(refs);
 
   return refs[0];
 }

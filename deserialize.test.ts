@@ -61,10 +61,25 @@ Deno.test("deserialize symbol", () => {
   );
 });
 
-Deno.test("deserialize builtin Map", () => {
+Deno.test("deserialize built-in Set", () => {
+  assertEquals(
+    deserialize("Set(1,2,3,4,5)"),
+    new Set([1, 2, 3, 4, 5]),
+  );
+});
+
+Deno.test("deserialize built-in Set circular", () => {
+  const deserialized = deserialize("Set($0)");
+  assertStrictEquals(
+    deserialized,
+    [...deserialized][0],
+  );
+});
+
+Deno.test("deserialize built-in Map", () => {
   assertEquals(
     deserialize(
-      'Map([$1,$2,$3,$4]);["string","this is string"];[true,"boolean"];[null,"null"];[$5,"object"];{}',
+      'Map("string"=>"this is string",true=>"boolean",null=>"null",$1=>"object");{}',
     ),
     new Map<any, any>([
       ["string", "this is string"],
@@ -75,26 +90,29 @@ Deno.test("deserialize builtin Map", () => {
   );
 });
 
-Deno.test("deserialize builtin Set", () => {
+Deno.test("deserialize build-in Map deep", () => {
+  const map1 = new Map([["key1_1", "value1_1"], ["key1_2", "value1_2"]]);
+  const map2 = new Map([["key2_1", "value2_1"], ["key2_2", "value2_2"]]);
+
   assertEquals(
-    deserialize("Set([1,2,3,4,5])"),
-    new Set([1, 2, 3, 4, 5]),
+    deserialize(
+      'Map("key1"=>$1,$2=>"val2");Map("key1_1"=>"value1_1","key1_2"=>"value1_2");Map("key2_1"=>"value2_1","key2_2"=>"value2_2")',
+    ),
+    new Map<any, any>([["key1", map1] as const, [map2, "val2"] as const]),
   );
 });
 
-Deno.test("deserialize builtin Date", () => {
-  assertEquals(deserialize("Date(1640962800000)"), new Date(1640962800000));
-});
+Deno.test("deserialize build-in Map circular", () => {
+  const map1 = deserialize("Map($0=>$0)") as Map<any, any>;
+  const keys1 = [...map1.keys()];
+  assertEquals(keys1.length, 1);
+  assertStrictEquals(map1.get(map1), map1);
 
-Deno.test("deserialize regex", () => {
-  assertEquals(deserialize("/abc/"), /abc/);
-
-  assertEquals(deserialize("/abc/gmi"), /abc/gmi);
-  assertEquals(deserialize("/abc/gim"), /abc/gmi);
-  assertEquals(deserialize("/abc/mgi"), /abc/gmi);
-  assertEquals(deserialize("/abc/mig"), /abc/gmi);
-  assertEquals(deserialize("/abc/img"), /abc/gmi);
-  assertEquals(deserialize("/abc/igm"), /abc/gmi);
+  const map2 = deserialize('Map($0=>"val","key"=>$0)') as Map<any, any>;
+  const keys2 = [...map2.keys()];
+  assertEquals(keys2.length, 2);
+  assertStrictEquals(map2.get(map2), "val");
+  assertStrictEquals(map2.get("key"), map2);
 });
 
 Deno.test("deserialize array", () => {
@@ -102,7 +120,7 @@ Deno.test("deserialize array", () => {
 
   assertEquals(
     deserialize(
-      '[$1,$7,$8];[$2,$5];[$3,2,"",false,$4];{};[];[$6];[];[1,2];[1]',
+      '[$1,$2,$3];[$4,$5];[1,2];[1];[$6,2,"",false,$7];[$8];{};[];[]',
     ),
     [[[{}, 2, "", false, []], [[]]], [1, 2], [1]],
   );

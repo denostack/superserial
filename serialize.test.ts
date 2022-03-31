@@ -70,6 +70,37 @@ Deno.test("serialize built-in Map", () => {
   );
 });
 
+Deno.test("serialize build-in Map deep", () => {
+  const map1 = new Map([["key1_1", "value1_1"], ["key1_2", "value1_2"]]);
+  const map2 = new Map([["key2_1", "value2_1"], ["key2_2", "value2_2"]]);
+
+  assertEquals(
+    serialize(
+      new Map<any, any>([["key1", map1] as const, [map2, "val2"] as const]),
+    ),
+    'Map("key1"=>$1,$2=>"val2");Map("key1_1"=>"value1_1","key1_2"=>"value1_2");Map("key2_1"=>"value2_1","key2_2"=>"value2_2")',
+  );
+});
+
+Deno.test("serialize build-in Map circular", () => {
+  const map1 = new Map<any, any>();
+  map1.set(map1, map1);
+
+  assertEquals(
+    serialize(map1),
+    "Map($0=>$0)",
+  );
+
+  const map2 = new Map<any, any>();
+  map2.set(map2, "val");
+  map2.set("key", map2);
+
+  assertEquals(
+    serialize(map2),
+    'Map($0=>"val","key"=>$0)',
+  );
+});
+
 Deno.test("serialize built-in Date", () => {
   assertEquals(serialize(new Date(1640962800000)), "Date(1640962800000)");
 });
