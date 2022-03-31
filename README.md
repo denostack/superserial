@@ -53,43 +53,51 @@ import { Serializer } from "superserial";
 
 ## Index
 
-- [Extending types](#extending-types)
+- [Built-in Objects](#built-in-objects)
 - [Circular Reference](#circular-reference)
 - [Class Support](#class-support)
 
-### Extending types
+### Built-in Objects
 
-- Undefined (`typeof val === 'undefined'`)
-- Symbol (`typeof val === 'symbol'`)
-- BigInt (`typeof val === 'bigint'`)
-- Number
-  - `NaN`
-  - `Infinity`, `-Infinity`
+**Value Properties**
+
+- `NaN`
+- `Infinity`, `-Infinity`
+- `undefined`
 
 ```ts
-const output = serializer.serialize({
-  string: "string",
-  true: true,
-  false: false,
-  number: 3.141592,
-  null: null,
+serializer.serialize({
   und: undefined,
   nan: NaN,
   inf: Infinity,
   ninf: -Infinity,
-  regex: /abc/gmi,
-});
-
-console.log(output);
-// {"string":"string","true":true,"false":false,"number":3.141592,"null":null,"und":undefined,"nan":NaN,"inf":Infinity,"ninf":-Infinity,"regex":/abc/gim}
+}); // {"und":undefined,"nan":NaN,"inf":Infinity,"ninf":-Infinity}
 ```
 
-### Built-in Classes
+**Fundamental Objects**
 
-- `Map`
-- `Set`
+- `Symbol`
+
+**ETC**
+
+- `BigInt`
 - `Date`
 - `RegExp`
+- `Map`
+- `Set`
+
+```ts
+const symbol = Symbol();
+serializer.serialize({
+  sym: symbol,
+  bigint: 100n,
+  date: new Date(),
+  regex: /abc/gmi,
+  map: new Map([["key1", "value1"], ["key2", "value2"]]),
+  set: new Set([1, 2, 3, 4]),
+});
+// {"sym":$1,"bigint":100n,"date":$2,"regex":$3,"map":$4,"set":$5};Symbol();Date(1648740167514);/abc/gim;Map("key1"=>"value1","key2"=>"value2");Set(1,2,3,4)
+```
 
 ### Circular Reference
 
@@ -116,7 +124,21 @@ const deserialized = serializer.deserialize(serialized) as typeof nodes;
 console.log(deserialized === deserialized[0].siblings); // true
 console.log(deserialized[0] === deserialized[0].self); // true
 console.log(deserialized === deserialized[1].siblings); // true
-console.log(deserialized[1] === deserialized[1].self);
+console.log(deserialized[1] === deserialized[1].self); // true
+```
+
+**Circular Set & Map**
+
+```ts
+const set = new Set();
+set.add(set);
+
+serializer.serialize(set); // Set($0)
+
+const map = new Map();
+map.set(map, map);
+
+serializer.serialize(map); // Map($0=>$0)
 ```
 
 ### Class Support
