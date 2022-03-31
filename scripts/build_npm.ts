@@ -1,5 +1,9 @@
 import { build, emptyDir } from "https://deno.land/x/dnt@0.22.0/mod.ts";
 
+const cmd = Deno.run({ cmd: ["git", "describe", "--tags"], stdout: "piped" });
+const version = new TextDecoder().decode(await cmd.output()).trim();
+cmd.close();
+
 await emptyDir("./.npm");
 
 await build({
@@ -11,7 +15,7 @@ await build({
   test: false,
   package: {
     name: "superserial",
-    version: Deno.args[0],
+    version,
     description:
       "superserial provides serialization in any way you can imagine",
     keywords: ["serialize", "JSON", "flatted", "circular"],
