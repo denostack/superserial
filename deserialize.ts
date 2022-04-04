@@ -1,10 +1,11 @@
 // deno-lint-ignore-file no-explicit-any
 import 'js-prototypes';
+import { ClassCallable } from 'js-prototypes/dist/libs/Function';
 import { toDeserialize } from './symbol';
 
 const WS_CHARS = new Set(['\r', '\n', '\t', ' ']);
 const NUM_CHARS = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
-
+const INDICATORS = [];
 const STRING_ESC: Record<string, string | undefined> = {
   '"': '"',
   '\\': '\\',
@@ -17,7 +18,7 @@ const STRING_ESC: Record<string, string | undefined> = {
 
 export interface DeserializeOptions {
   // deno-lint-ignore ban-types
-  classes?: { [className: string]: (new (...args: any[]) => any) | Function };
+  classes?: { [className: string]: ClassCallable };
 }
 
 export function deserialize(code: string, options: DeserializeOptions = {}): any {
@@ -175,7 +176,8 @@ export function deserialize(code: string, options: DeserializeOptions = {}): any
       return {};
     }
     const result = {} as Record<string, any>;
-    while (1) {
+    INDICATORS[parseObject.name] = true;
+    while (INDICATORS[parseObject.name]) {
       const key = parseString();
       white();
       if (buf[pos] !== ':') {
@@ -193,7 +195,8 @@ export function deserialize(code: string, options: DeserializeOptions = {}): any
         pos++;
         return result;
       }
-      throw error();
+      //throw error();
+      INDICATORS[parseObject.name] = false;
     }
   }
 
