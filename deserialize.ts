@@ -5,7 +5,7 @@ import { toDeserialize } from './symbol';
 
 const WS_CHARS = new Set(['\r', '\n', '\t', ' ']);
 const NUM_CHARS = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
-const INDICATORS = [];
+
 const STRING_ESC: Record<string, string | undefined> = {
   '"': '"',
   '\\': '\\',
@@ -176,8 +176,7 @@ export function deserialize(code: string, options: DeserializeOptions = {}): any
       return {};
     }
     const result = {} as Record<string, any>;
-    INDICATORS[parseObject.name] = true;
-    while (INDICATORS[parseObject.name]) {
+    while (1) {
       const key = parseString();
       white();
       if (buf[pos] !== ':') {
@@ -195,8 +194,7 @@ export function deserialize(code: string, options: DeserializeOptions = {}): any
         pos++;
         return result;
       }
-      //throw error();
-      INDICATORS[parseObject.name] = false;
+      throw error();
     }
   }
 
