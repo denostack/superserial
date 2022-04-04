@@ -1,6 +1,6 @@
-export { Serializer } from "./serializer.ts";
+export { Serializer } from "./serializer";
 
-export { serialize } from "./serialize.ts";
-export { deserialize } from "./deserialize.ts";
+export { serialize } from "./serialize";
+export { deserialize } from "./deserialize";
 
-export { toDeserialize, toSerialize } from "./symbol.ts";
+export { toDeserialize, toSerialize } from "./symbol";

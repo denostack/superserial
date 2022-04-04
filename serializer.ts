@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 
-import { serialize, SerializeOptions } from "./serialize.ts";
-import { deserialize } from "./deserialize.ts";
+import { serialize, SerializeOptions } from "./serialize";
+import { deserialize } from "./deserialize";
 
 export interface SerializerOptions {
   // deno-lint-ignore ban-types

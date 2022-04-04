@@ -3,5 +3,15 @@
   "deno.lint": true,
   "deno.unstable": true,
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "denoland.vscode-deno"
+  "editor.defaultFormatter": "denoland.vscode-deno",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true // let ESLint take formating and linting
+  },
+  "[json]": {
+    "editor.formatOnSave": true // enable json formating with default vscode formatter
+  },
+  "[typescript]": {
+    "editor.formatOnSave": false
+  },
+  "files.eol": "\n"
 }

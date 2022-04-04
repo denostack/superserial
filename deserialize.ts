@@ -1,29 +1,26 @@
 // deno-lint-ignore-file no-explicit-any
+import 'js-prototypes';
+import { toDeserialize } from './symbol';
 
-import { toDeserialize } from "./symbol.ts";
-
-const WS_CHARS = new Set(["\r", "\n", "\t", " "]);
-const NUM_CHARS = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+const WS_CHARS = new Set(['\r', '\n', '\t', ' ']);
+const NUM_CHARS = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
 
 const STRING_ESC: Record<string, string | undefined> = {
   '"': '"',
-  "\\": "\\",
-  b: "\b",
-  f: "\f",
-  n: "\n",
-  r: "\r",
-  t: "\t",
+  '\\': '\\',
+  b: '\b',
+  f: '\f',
+  n: '\n',
+  r: '\r',
+  t: '\t',
 };
 
 export interface DeserializeOptions {
   // deno-lint-ignore ban-types
-  classes?: { [className: string]: ((new (...args: any[]) => any) | Function) };
+  classes?: { [className: string]: (new (...args: any[]) => any) | Function };
 }
 
-export function deserialize(
-  code: string,
-  options: DeserializeOptions = {},
-): any {
+export function deserialize(code: string, options: DeserializeOptions = {}): any {
   const mapClasses = options.classes ?? {};
 
   const refs = [] as any[];
@@ -57,60 +54,56 @@ export function deserialize(
   }
 
   function error() {
-    return new SyntaxError(
-      `Unexpected ${
-        buf[pos] ? `token ${buf[pos]}` : "end"
-      } in JSON at position ${pos}`,
-    );
+    return new SyntaxError(`Unexpected ${buf[pos] ? `token ${buf[pos]}` : 'end'} in JSON at position ${pos}`);
   }
 
   function parseAny(): any {
     white();
     switch (buf[pos]) {
-      case "$":
+      case '$':
         return parseRef();
-      case "{":
+      case '{':
         return parseObject();
-      case "[":
+      case '[':
         return parseArray();
-      case "/":
+      case '/':
         return parseRegExp();
       case '"':
         return parseString();
-      case "-":
-      case "0":
-      case "1":
-      case "2":
-      case "3":
-      case "4":
-      case "5":
-      case "6":
-      case "7":
-      case "8":
-      case "9": {
+      case '-':
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9': {
         return parseNumber();
       }
       default: {
         const name = parseName();
         switch (name) {
-          case "NaN":
+          case 'NaN':
             return NaN;
-          case "Infinity":
+          case 'Infinity':
             return Infinity;
-          case "undefined":
+          case 'undefined':
             return undefined;
-          case "null":
+          case 'null':
             return null;
-          case "true":
+          case 'true':
             return true;
-          case "false":
+          case 'false':
             return false;
         }
-        if (buf[pos] === "{") {
+        if (buf[pos] === '{') {
           let obj = parseObject();
           const baseClass = mapClasses[name] ?? null;
           if (baseClass) {
-            if (typeof (baseClass as any)[toDeserialize] === "function") {
+            if (typeof (baseClass as any)[toDeserialize] === 'function') {
               obj = (baseClass as any)[toDeserialize](obj);
             }
             Object.setPrototypeOf(obj, baseClass.prototype);
@@ -118,15 +111,15 @@ export function deserialize(
             console.warn(`Class ${name} is not defined. It will be ignored.`);
           }
           return obj;
-        } else if (buf[pos] === "(") {
+        } else if (buf[pos] === '(') {
           switch (name) {
-            case "Map":
+            case 'Map':
               return parseBuiltInMap();
-            case "Set":
+            case 'Set':
               return parseBuiltInSet();
-            case "Date":
+            case 'Date':
               return parseBuiltInDate();
-            case "Symbol":
+            case 'Symbol':
               return parseBuiltInSymbol();
             default:
               throw error();
@@ -140,7 +133,7 @@ export function deserialize(
 
   function parseRef() {
     pos++;
-    let result = "";
+    let result = '';
     while (NUM_CHARS.has(buf[pos])) {
       result += buf[pos++];
     }
@@ -153,7 +146,7 @@ export function deserialize(
   function parseArray() {
     pos++;
     white();
-    if (buf[pos] === "]") {
+    if (buf[pos] === ']') {
       pos++;
       return [];
     }
@@ -162,12 +155,12 @@ export function deserialize(
     result.push(parseAny());
 
     white();
-    while (buf[pos] === ",") {
+    while (buf[pos] === ',') {
       pos++;
       result.push(parseAny());
       white();
     }
-    if (buf[pos] === "]") {
+    if (buf[pos] === ']') {
       pos++;
       return result;
     }
@@ -177,7 +170,7 @@ export function deserialize(
   function parseObject() {
     pos++;
     white();
-    if (buf[pos] === "}") {
+    if (buf[pos] === '}') {
       pos++;
       return {};
     }
@@ -185,18 +178,18 @@ export function deserialize(
     while (1) {
       const key = parseString();
       white();
-      if (buf[pos] !== ":") {
+      if (buf[pos] !== ':') {
         throw error();
       }
       pos++;
       result[key as string] = parseAny();
       white();
-      if (buf[pos] === ",") {
+      if (buf[pos] === ',') {
         pos++;
         white();
         continue;
       }
-      if (buf[pos] === "}") {
+      if (buf[pos] === '}') {
         pos++;
         return result;
       }
@@ -207,7 +200,7 @@ export function deserialize(
   function parseBuiltInMap() {
     pos++;
     white();
-    if (buf[pos] === ")") {
+    if (buf[pos] === ')') {
       pos++;
       return new Map();
     }
@@ -215,17 +208,17 @@ export function deserialize(
     while (1) {
       const key = parseAny();
       white();
-      consume("=>");
+      consume('=>');
       white();
       const value = parseAny();
       pairs.push([key, value]);
       white();
-      if (buf[pos] === ",") {
+      if (buf[pos] === ',') {
         pos++;
         white();
         continue;
       }
-      if (buf[pos] === ")") {
+      if (buf[pos] === ')') {
         pos++;
         return new Map(pairs);
       }
@@ -236,7 +229,7 @@ export function deserialize(
   function parseBuiltInSet() {
     pos++;
     white();
-    if (buf[pos] === ")") {
+    if (buf[pos] === ')') {
       pos++;
       return new Set();
     }
@@ -245,12 +238,12 @@ export function deserialize(
     result.push(parseAny());
 
     white();
-    while (buf[pos] === ",") {
+    while (buf[pos] === ',') {
       pos++;
       result.push(parseAny());
       white();
     }
-    if (buf[pos] === ")") {
+    if (buf[pos] === ')') {
       pos++;
       return new Set(result);
     }
@@ -261,20 +254,20 @@ export function deserialize(
     pos++;
     white();
     switch (buf[pos]) {
-      case "-":
-      case "0":
-      case "1":
-      case "2":
-      case "3":
-      case "4":
-      case "5":
-      case "6":
-      case "7":
-      case "8":
-      case "9": {
+      case '-':
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9': {
         const value = parseNumber();
         white();
-        if (buf[pos] !== ")") {
+        if (buf[pos] !== ')') {
           throw error();
         }
         pos++;
@@ -288,12 +281,12 @@ export function deserialize(
     pos++;
     white();
     let value = undefined as any;
-    if (buf[pos] === ")") {
+    if (buf[pos] === ')') {
       pos++;
     } else if (buf[pos] === '"') {
       value = parseString();
       white();
-      if (buf[pos] !== ")") {
+      if (buf[pos] !== ')') {
         throw error();
       }
       pos++;
@@ -304,15 +297,15 @@ export function deserialize(
     return Symbol(value);
   }
   function parseNumber() {
-    let result = "";
+    let result = '';
     let isNeg = false;
-    if (buf[pos] === "-") {
+    if (buf[pos] === '-') {
       isNeg = true;
       pos++;
     }
-    if (buf[pos] === "I") {
+    if (buf[pos] === 'I') {
       pos++;
-      consume("nfinity");
+      consume('nfinity');
       return isNeg ? -Infinity : Infinity;
     }
     if (NUM_CHARS.has(buf[pos])) {
@@ -323,11 +316,11 @@ export function deserialize(
     while (NUM_CHARS.has(buf[pos])) {
       result += buf[pos++];
     }
-    if (buf[pos] === "n") {
+    if (buf[pos] === 'n') {
       pos++;
       return BigInt(isNeg ? `-${result}` : result);
     } else {
-      if (buf[pos] === ".") {
+      if (buf[pos] === '.') {
         result += buf[pos++];
         if (NUM_CHARS.has(buf[pos])) {
           result += buf[pos++];
@@ -338,9 +331,9 @@ export function deserialize(
           result += buf[pos++];
         }
       }
-      if (buf[pos] === "e" || buf[pos] === "E") {
+      if (buf[pos] === 'e' || buf[pos] === 'E') {
         result += buf[pos++];
-        if (buf[pos] === "-" || buf[pos] === "+") {
+        if (buf[pos] === '-' || buf[pos] === '+') {
           result += buf[pos++];
         }
         if (NUM_CHARS.has(buf[pos])) {
@@ -357,16 +350,16 @@ export function deserialize(
   }
 
   function parseString() {
-    let result = "";
+    let result = '';
     pos++;
     while (1) {
       if (buf[pos] === '"') {
         pos++;
         return result;
       }
-      if (buf[pos] === "\\") {
+      if (buf[pos] === '\\') {
         pos++;
-        if (buf[pos] === "u") {
+        if (buf[pos] === 'u') {
           pos++;
           let uffff = 0;
           for (let i = 0; i < 4; i++) {
@@ -391,96 +384,96 @@ export function deserialize(
   }
 
   function parseRegExp() {
-    let result = "";
+    let result = '';
     pos++;
-    if (buf[pos] === "/") {
+    if (buf[pos] === '/') {
       throw error();
     }
     while (1) {
-      if (buf[pos] === "/") {
+      if (buf[pos] === '/') {
         pos++;
         switch (buf[pos]) {
-          case "i": {
+          case 'i': {
             pos++;
             switch (buf[pos]) {
-              case "m": {
+              case 'm': {
                 pos++;
-                if (buf[pos] === "g") {
+                if (buf[pos] === 'g') {
                   pos++;
-                  return new RegExp(result, "img");
+                  return new RegExp(result, 'img');
                 } else {
-                  return new RegExp(result, "im");
+                  return new RegExp(result, 'im');
                 }
               }
-              case "g": {
+              case 'g': {
                 pos++;
-                if (buf[pos] === "m") {
+                if (buf[pos] === 'm') {
                   pos++;
-                  return new RegExp(result, "igm");
+                  return new RegExp(result, 'igm');
                 } else {
-                  return new RegExp(result, "ig");
+                  return new RegExp(result, 'ig');
                 }
               }
               default: {
-                return new RegExp(result, "i");
+                return new RegExp(result, 'i');
               }
             }
           }
-          case "m": {
+          case 'm': {
             pos++;
             switch (buf[pos]) {
-              case "i": {
+              case 'i': {
                 pos++;
-                if (buf[pos] === "g") {
+                if (buf[pos] === 'g') {
                   pos++;
-                  return new RegExp(result, "mig");
+                  return new RegExp(result, 'mig');
                 } else {
-                  return new RegExp(result, "mi");
+                  return new RegExp(result, 'mi');
                 }
               }
-              case "g": {
+              case 'g': {
                 pos++;
-                if (buf[pos] === "i") {
+                if (buf[pos] === 'i') {
                   pos++;
-                  return new RegExp(result, "mgi");
+                  return new RegExp(result, 'mgi');
                 } else {
-                  return new RegExp(result, "mg");
+                  return new RegExp(result, 'mg');
                 }
               }
               default: {
-                return new RegExp(result, "m");
+                return new RegExp(result, 'm');
               }
             }
           }
-          case "g": {
+          case 'g': {
             pos++;
             switch (buf[pos]) {
-              case "m": {
+              case 'm': {
                 pos++;
-                if (buf[pos] === "i") {
+                if (buf[pos] === 'i') {
                   pos++;
-                  return new RegExp(result, "gmi");
+                  return new RegExp(result, 'gmi');
                 } else {
-                  return new RegExp(result, "gm");
+                  return new RegExp(result, 'gm');
                 }
               }
-              case "i": {
+              case 'i': {
                 pos++;
-                if (buf[pos] === "m") {
+                if (buf[pos] === 'm') {
                   pos++;
-                  return new RegExp(result, "gim");
+                  return new RegExp(result, 'gim');
                 } else {
-                  return new RegExp(result, "gi");
+                  return new RegExp(result, 'gi');
                 }
               }
               default: {
-                return new RegExp(result, "g");
+                return new RegExp(result, 'g');
               }
             }
           }
         }
         return new RegExp(result);
-      } else if (buf[pos] === "\\") {
+      } else if (buf[pos] === '\\') {
         result += buf[pos++];
         result += buf[pos++];
       } else {
@@ -491,21 +484,14 @@ export function deserialize(
 
   function parseName() {
     let chartCode = buf.charCodeAt(pos);
-    let result = "";
-    if (
-      chartCode >= 65 && chartCode <= 90 || chartCode >= 97 && chartCode <= 122
-    ) {
+    let result = '';
+    if ((chartCode >= 65 && chartCode <= 90) || (chartCode >= 97 && chartCode <= 122)) {
       result += buf[pos++];
     } else {
       return result;
     }
     while ((chartCode = buf.charCodeAt(pos))) {
-      if (
-        chartCode >= 65 && chartCode <= 90 ||
-        chartCode >= 97 && chartCode <= 122 ||
-        chartCode >= 48 && chartCode <= 57 ||
-        chartCode === 95
-      ) {
+      if ((chartCode >= 65 && chartCode <= 90) || (chartCode >= 97 && chartCode <= 122) || (chartCode >= 48 && chartCode <= 57) || chartCode === 95) {
         result += buf[pos++];
       } else {
         break;
@@ -517,7 +503,7 @@ export function deserialize(
   refs.push(parseAny());
 
   white();
-  while (consume1(";")) {
+  while (consume1(';')) {
     refs.push(parseAny());
     white();
   }
@@ -531,7 +517,7 @@ export function deserialize(
     if (replaced.has(value)) {
       return;
     }
-    if (typeof value === "undefined") {
+    if (typeof value === 'undefined') {
       return;
     }
     if (value === null) {
@@ -539,8 +525,8 @@ export function deserialize(
     }
     if (Array.isArray(value)) {
       value.forEach((v, i) => {
-        const refIndex = typeof v === "symbol" ? refsIndex.get(v) : null;
-        if (typeof refIndex === "number") {
+        const refIndex = typeof v === 'symbol' ? refsIndex.get(v) : null;
+        if (typeof refIndex === 'number') {
           value[i] = refs[refIndex];
         } else {
           replacer(v);
@@ -551,8 +537,8 @@ export function deserialize(
     }
     if (value instanceof Set) {
       [...value].forEach((v) => {
-        const refIndex = typeof v === "symbol" ? refsIndex.get(v) : null;
-        if (typeof refIndex === "number") {
+        const refIndex = typeof v === 'symbol' ? refsIndex.get(v) : null;
+        if (typeof refIndex === 'number') {
           value.delete(v);
           value.add(refs[refIndex]);
         } else {
@@ -565,8 +551,8 @@ export function deserialize(
     if (value instanceof Map) {
       [...value.entries()].forEach(([k, v]) => {
         {
-          const refIndex = typeof k === "symbol" ? refsIndex.get(k) : null;
-          if (typeof refIndex === "number") {
+          const refIndex = typeof k === 'symbol' ? refsIndex.get(k) : null;
+          if (typeof refIndex === 'number') {
             value.delete(k);
             value.set(refs[refIndex], v);
             k = refs[refIndex];
@@ -575,8 +561,8 @@ export function deserialize(
           }
         }
         {
-          const refIndex = typeof v === "symbol" ? refsIndex.get(v) : null;
-          if (typeof refIndex === "number") {
+          const refIndex = typeof v === 'symbol' ? refsIndex.get(v) : null;
+          if (typeof refIndex === 'number') {
             value.set(k, refs[refIndex]);
           } else {
             replacer(v);
@@ -586,10 +572,10 @@ export function deserialize(
       replaced.add(value);
       return;
     }
-    if (typeof value === "object") {
+    if (typeof value === 'object') {
       for (const [k, v] of Object.entries(value)) {
-        const refIndex = typeof v === "symbol" ? refsIndex.get(v) : null;
-        if (typeof refIndex === "number") {
+        const refIndex = typeof v === 'symbol' ? refsIndex.get(v) : null;
+        if (typeof refIndex === 'number') {
           value[k] = refs[refIndex];
         } else {
           replacer(v);

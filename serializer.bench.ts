@@ -1,10 +1,10 @@
-import { Serializer } from "./serializer.ts";
+import { Serializer } from './serializer';
 
 const serializer = new Serializer();
 
-Deno.bench("serialize #Serializer.serialize", () => {
+Deno.bench('serialize #Serializer.serialize', () => {
   serializer.serialize({
-    string: "String",
+    string: 'String',
     number: 1000.0,
     true: true,
     false: false,
@@ -16,9 +16,9 @@ Deno.bench("serialize #Serializer.serialize", () => {
   });
 });
 
-Deno.bench("serialize #JSON.stringify", () => {
+Deno.bench('serialize #JSON.stringify', () => {
   JSON.stringify({
-    string: "String",
+    string: 'String',
     number: 1000.0,
     true: true,
     false: false,
@@ -31,7 +31,7 @@ Deno.bench("serialize #JSON.stringify", () => {
 });
 
 const serialized1 = serializer.serialize({
-  string: "String",
+  string: 'String',
   number: 1000.0,
   true: true,
   false: false,
@@ -41,12 +41,12 @@ const serialized1 = serializer.serialize({
     itesm: [{ name: 1 }, { name: 2 }, { name: 3 }],
   },
 });
-Deno.bench("serialize #Serializer.deserialize", () => {
+Deno.bench('serialize #Serializer.deserialize', () => {
   serializer.deserialize(serialized1);
 });
 
 const serialized2 = JSON.stringify({
-  string: "String",
+  string: 'String',
   number: 1000.0,
   true: true,
   false: false,
@@ -56,6 +56,6 @@ const serialized2 = JSON.stringify({
     itesm: [{ name: 1 }, { name: 2 }, { name: 3 }],
   },
 });
-Deno.bench("serialize #JSON.parse", () => {
+Deno.bench('serialize #JSON.parse', () => {
   JSON.parse(serialized2);
 });

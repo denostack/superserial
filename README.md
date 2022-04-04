@@ -18,7 +18,7 @@ not provide circular references.
 ### with Deno
 
 ```ts
-import { Serializer } from "https://deno.land/x/superserial/mod.ts";
+import { Serializer } from "https://deno.land/x/superserial/mod";
 
 const serializer = new Serializer();
 
@@ -188,7 +188,7 @@ import {
   Serializer,
   toDeserialize,
   toSerialize,
-} from "https://deno.land/x/superserial/mod.ts";
+} from "https://deno.land/x/superserial/mod";
 
 class TestUser {
   static [toDeserialize](data: { name: string; serializedBirth: number }) {

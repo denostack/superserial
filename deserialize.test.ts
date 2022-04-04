@@ -5,11 +5,11 @@ import {
   assertInstanceOf,
   assertNotStrictEquals,
   assertStrictEquals,
-} from "https://deno.land/std@0.131.0/testing/asserts.ts";
-import { assertSpyCall, spy } from "https://deno.land/x/mock@0.15.0/mod.ts";
+} from "https://deno.land/std@0.131.0/testing/asserts";
+import { assertSpyCall, spy } from "https://deno.land/x/mock@0.15.0/mod";
 
-import { deserialize } from "./deserialize.ts";
-import { toDeserialize } from "./symbol.ts";
+import { deserialize } from "./deserialize";
+import { toDeserialize } from "./symbol";
 
 Deno.test("deserialize scalar", () => {
   assertEquals(deserialize("null"), null);

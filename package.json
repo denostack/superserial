@@ -1,0 +1,20 @@
+{
+  "name": "superserial",
+  "version": "1.0.0",
+  "description": "<p>   <a href=\"https://npmcharts.com/compare/superserial?minimal=true\"><img alt=\"Downloads\" src=\"https://img.shields.io/npm/dt/superserial.svg?style=flat-square\" /></a>   <a href=\"https://www.npmjs.com/package/superserial\"><img alt=\"Version\" src=\"https://img.shields.io/npm/v/superserial.svg?style=flat-square\" /></a>   <a href=\"https://www.npmjs.com/package/superserial\"><img alt=\"License\" src=\"https://img.shields.io/npm/l/superserial.svg?style=flat-square\" /></a>   <img alt=\"Language Typescript\" src=\"https://img.shields.io/badge/language-Typescript-007acc.svg?style=flat-square\" /> </p>",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.18.0",
+    "@typescript-eslint/parser": "^5.18.0",
+    "eslint": "^8.12.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.6.2"
+  }
+}
