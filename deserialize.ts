@@ -1,7 +1,7 @@
 /* eslint-disable no-constant-condition */
 // deno-lint-ignore-file no-explicit-any
 import 'js-prototypes';
-import { ClassCallable } from 'js-prototypes/dist/libs/Function';
+import { ClassCallable } from 'js-prototypes/src/Function';
 import { toDeserialize } from './symbol';
 
 const WS_CHARS = new Set(['\r', '\n', '\t', ' ']);

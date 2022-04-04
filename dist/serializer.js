@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Serializer = void 0;
 const serialize_1 = require("./serialize");
 const deserialize_1 = require("./deserialize");
+require("js-prototypes");
 class Serializer {
     constructor(options) {
         this.options = {
@@ -13,10 +14,10 @@ class Serializer {
             this.options = Object.assign(this.options, options);
     }
     serialize(value, options) {
-        return (0, serialize_1.serialize)(value, options);
+        return serialize_1.serialize(value, options);
     }
     deserialize(code) {
-        return (0, deserialize_1.deserialize)(code, this.options);
+        return deserialize_1.deserialize(code, this.options);
     }
 }
 exports.Serializer = Serializer;

@@ -1,5 +1,5 @@
 import 'js-prototypes';
-import { ClassCallable } from 'js-prototypes/dist/libs/Function';
+import { ClassCallable } from 'js-prototypes/src/Function';
 export interface DeserializeOptions {
     classes?: {
         [className: string]: ClassCallable;

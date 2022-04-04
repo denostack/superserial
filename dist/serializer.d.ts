@@ -1,5 +1,6 @@
 import { SerializeOptions } from './serialize';
-import { ClassCallable } from 'js-prototypes/dist/libs/Function';
+import 'js-prototypes';
+import { ClassCallable } from 'js-prototypes/src/Function';
 export interface SerializerOptions {
     classes?: {
         [className: string]: ClassCallable;

@@ -1,8 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
 
-import { serialize, SerializeOptions } from './serialize';
-import { deserialize } from './deserialize';
-import { ClassCallable } from 'js-prototypes/dist/libs/Function';
+import { serialize as Encode, SerializeOptions } from './serialize';
+import { deserialize as Decode } from './deserialize';
+import 'js-prototypes';
+import { ClassCallable } from 'js-prototypes/src/Function';
 
 export interface SerializerOptions {
   // deno-lint-ignore ban-types
@@ -18,10 +19,10 @@ export class Serializer {
   }
 
   serialize(value: any, options?: SerializeOptions): string {
-    return serialize(value, options);
+    return Encode(value, options);
   }
 
   deserialize<T = any>(code: string): T {
-    return deserialize(code, this.options);
+    return Decode(code, this.options);
   }
 }
