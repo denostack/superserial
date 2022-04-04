@@ -47,15 +47,24 @@ npm install superserial
 
 ```ts
 import { Serializer } from "superserial";
+// or
+import { Serializer } from 'superserial/serializer';
 
 // Usage is as above :-)
 ```
 
 ## Index
 
-- [Built-in Objects](#built-in-objects)
-- [Circular Reference](#circular-reference)
-- [Class Support](#class-support)
+- [superserial](#superserial)
+  - [Usage](#usage)
+    - [with Deno](#with-deno)
+    - [with Node.js & Browser](#with-nodejs--browser)
+  - [Index](#index)
+    - [Built-in Objects](#built-in-objects)
+    - [Circular Reference](#circular-reference)
+    - [Class Support](#class-support)
+      - [toSerialize / toDeserialize](#toserialize--todeserialize)
+  - [TODO](#todo)
 
 ### Built-in Objects
 

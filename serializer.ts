@@ -23,7 +23,7 @@ export class Serializer {
   }
 
   deserialize<T = any>(code: string): T {
-    const opt = this.options ? this.options : {
+    const opt = typeof this.options == 'object' ? this.options : {
       classes: {},
     }
     return Decode(code, opt);

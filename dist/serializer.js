@@ -17,7 +17,7 @@ class Serializer {
         return serialize_1.serialize(value, options);
     }
     deserialize(code) {
-        const opt = this.options ? this.options : {
+        const opt = typeof this.options == 'object' ? this.options : {
             classes: {},
         };
         return deserialize_1.deserialize(code, opt);
