@@ -1,3 +1,4 @@
+/* eslint-disable no-constant-condition */
 // deno-lint-ignore-file no-explicit-any
 import 'js-prototypes';
 import { ClassCallable } from 'js-prototypes/dist/libs/Function';
