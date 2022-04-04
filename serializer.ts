@@ -1,15 +1,20 @@
 // deno-lint-ignore-file no-explicit-any
 
-import { serialize, SerializeOptions } from "./serialize";
-import { deserialize } from "./deserialize";
+import { serialize, SerializeOptions } from './serialize';
+import { deserialize } from './deserialize';
+import { ClassCallable } from 'js-prototypes/dist/libs/Function';
 
 export interface SerializerOptions {
   // deno-lint-ignore ban-types
-  classes?: { [className: string]: ((new (...args: any[]) => any) | Function) };
+  classes?: { [className: string]: ClassCallable };
 }
 
 export class Serializer {
-  constructor(public options?: SerializerOptions) {
+  options: SerializerOptions = {
+    classes: {},
+  };
+  constructor(options?: SerializerOptions) {
+    if (options) this.options = Object.assign(this.options, options);
   }
 
   serialize(value: any, options?: SerializeOptions): string {

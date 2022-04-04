@@ -2,7 +2,8 @@
   "name": "superserial",
   "version": "1.0.0",
   "description": "<p>   <a href=\"https://npmcharts.com/compare/superserial?minimal=true\"><img alt=\"Downloads\" src=\"https://img.shields.io/npm/dt/superserial.svg?style=flat-square\" /></a>   <a href=\"https://www.npmjs.com/package/superserial\"><img alt=\"Version\" src=\"https://img.shields.io/npm/v/superserial.svg?style=flat-square\" /></a>   <a href=\"https://www.npmjs.com/package/superserial\"><img alt=\"License\" src=\"https://img.shields.io/npm/l/superserial.svg?style=flat-square\" /></a>   <img alt=\"Language Typescript\" src=\"https://img.shields.io/badge/language-Typescript-007acc.svg?style=flat-square\" /> </p>",
-  "main": "index.js",
+  "main": "dist/serializer.js",
+  "types": "dist/serializer.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

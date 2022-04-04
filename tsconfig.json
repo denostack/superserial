@@ -5,6 +5,8 @@
     "outDir": "./dist",
     "rootDir": "./",
     "downlevelIteration": true,
+    "skipLibCheck": true,
+    "declaration": true,
     "lib": [
       "ES2020",
       "ESNext"
@@ -12,7 +14,8 @@
   },
   "include": [
     "serialize.ts",
-    "deserialize.ts"
+    "deserialize.ts",
+    "serializer.ts"
   ],
   "exclude": [
     "node_modules",
