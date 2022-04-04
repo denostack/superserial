@@ -17,7 +17,10 @@ class Serializer {
         return serialize_1.serialize(value, options);
     }
     deserialize(code) {
-        return deserialize_1.deserialize(code, this.options);
+        const opt = this.options ? this.options : {
+            classes: {},
+        };
+        return deserialize_1.deserialize(code, opt);
     }
 }
 exports.Serializer = Serializer;

@@ -23,6 +23,9 @@ export class Serializer {
   }
 
   deserialize<T = any>(code: string): T {
-    return Decode(code, this.options);
+    const opt = this.options ? this.options : {
+      classes: {},
+    }
+    return Decode(code, opt);
   }
 }
