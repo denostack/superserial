@@ -141,6 +141,19 @@ map.set(map, map);
 serializer.serialize(map); // Map($0=>$0)
 ```
 
+Deserialization also works perfectly!
+
+```ts
+const set = serializer.deserialize("Set($0)");
+
+console.log(set === [...set][0]); // true
+
+const map = serializer.deserialize("Map($0=>$0)");
+
+console.log(map === [...map.keys()][0]); // true
+console.log(map === map.get([...map.keys()][0])); // true
+```
+
 ### Class Support
 
 Classes contain methods, getters, etc., but JSON doesn't fully support them.
@@ -152,13 +165,9 @@ created.
 ```ts
 class TestUser {
   constructor(
-    public name: string,
-    public birth: number,
+    public name?: string,
+    public age?: number,
   ) {
-  }
-
-  get age() {
-    return new Date().getFullYear() - this.birth;
   }
 }
 
@@ -169,19 +178,28 @@ Serializes the object and then deserializes it again. Since the original class
 object is converted as it is, all getters and methods can be used as they are.
 
 ```ts
-const serialized = serializer.serialize(new TestUser("wan2land", 2000));
+const serialized = serializer.serialize(new TestUser("wan2land", 20));
 console.log(serialized);
-// TestUser{"name":"wan2land","birth":2000}
+// TestUser{"name":"wan2land","age":20}
 
 const user = serializer.deserialize(serialized);
-console.log(user); // TestUser { name: "wan2land", birth: 2000 }
-console.log(user.age); // 22
+console.log(user); // TestUser { name: "wan2land", age: 20 }
 ```
 
 #### toSerialize / toDeserialize
 
 Private variables can be converted using two special symbols (`toSerialize`,
 `toDeserialize`).
+
+When serializing(`serialize`), the object's data is created based on the
+`toSerialize` method. You can check the result of `toSerialize` by looking at
+the serialized string.
+
+When deserializing(`deserialize`), it is impossible to create an object without
+a constructor call. (ref.
+[No backdoor to access private](https://github.com/tc39/proposal-class-fields#no-backdoor-to-access-private))
+If the `toDeserialize` method is included, a value can be injected through
+`toDeserialize` after calling the constructor.
 
 ```ts
 import {
@@ -191,42 +209,52 @@ import {
 } from "https://deno.land/x/superserial/mod.ts";
 
 class TestUser {
-  static [toDeserialize](data: { name: string; serializedBirth: number }) {
-    const user = new TestUser(data.name, 0);
-    user.#_birth = data.serializedBirth;
-    return user;
+  #_age = 0;
+  constructor(public name: string) {
+    this.#_age = 0;
   }
 
-  #_birth: number;
-
-  constructor(
-    public name: string,
-    birth: number,
-  ) {
-    this.#_birth = birth;
+  setAge(age: number) {
+    this.#_age = age;
   }
 
-  getBirth() {
-    return this.#_birth;
+  getAge() {
+    return this.#_age;
   }
 
   [toSerialize]() {
     return {
       name: this.name,
-      serializedBirth: this.#_birth,
+      age: this.#_age,
     };
+  }
+
+  [toDeserialize](
+    value: {
+      name: string;
+      age: number;
+    },
+  ) {
+    this.name = value.name;
+    this.#_age = value.age;
   }
 }
 
 const serializer = new Serializer({ classes: { TestUser } });
 
-const serialized = serializer.serialize(new TestUser("wan2land", 2000));
-console.log(serialized);
-// TestUser{"name":"wan2land","serializedBirth":2000}
+{
+  const user = new TestUser("wan2land");
+  user.setAge(20);
 
-const user = serializer.deserialize<TestUser>(serialized);
-console.log(user); // TestUser { name: "wan2land" }
-console.log(user.getBirth()); // 2000
+  console.log(serializer.serialize(user)); // TestUser{"name":"wan2land","age":20}
+}
+{
+  const user = serializer.deserialize<TestUser>(
+    'TestUser{"name":"wan2land","age":20}',
+  );
+  console.log(user); // TestUser { name: "wan2land" }
+  console.log(user.getAge()); // 20
+}
 ```
 
 ## TODO

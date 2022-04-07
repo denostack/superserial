@@ -106,6 +106,8 @@ Deno.test("deserialize build-in Map circular", () => {
   const map1 = deserialize("Map($0=>$0)") as Map<any, any>;
   const keys1 = [...map1.keys()];
   assertEquals(keys1.length, 1);
+
+  assertStrictEquals(keys1[0], map1);
   assertStrictEquals(map1.get(map1), map1);
 
   const map2 = deserialize('Map($0=>"val","key"=>$0)') as Map<any, any>;
