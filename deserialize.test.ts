@@ -175,17 +175,39 @@ Deno.test("deserialize object circular", () => {
   assertStrictEquals(result.children[1].sibling, result.children[0]);
 });
 
-Deno.test("deserialize class without define", () => {
+Deno.test("deserialize class object", () => {
+  class TestUser {
+    age = 0;
+    constructor(public name: string) {
+    }
+  }
+
+  const spyConsole = spy(console, "warn");
+
+  const deserialized = deserialize(
+    'TestUser{"name":"wan2land","age":20}',
+    { classes: { TestUser } },
+  ) as TestUser;
+
+  assertInstanceOf(deserialized, TestUser);
+
+  assertEquals(deserialized.name, "wan2land");
+  assertEquals(deserialized.age, 20);
+
+  assertEquals(spyConsole.calls.length, 0);
+  spyConsole.restore();
+});
+
+Deno.test("deserialize class object undefined", () => {
   const spyConsole = spy(console, "warn");
 
   assertEquals(
     deserialize(
-      'TestUser{"name":"wan2land","age":20,"publicSomething":2}',
+      'TestUser{"name":"wan2land","age":20}',
     ),
     {
       name: "wan2land",
       age: 20,
-      publicSomething: 2,
     },
   );
 
@@ -202,23 +224,43 @@ Deno.test("deserialize class without define", () => {
   spyConsole.restore();
 });
 
-Deno.test("deserialize class", () => {
+Deno.test("deserialize class with private", () => {
   class TestUser {
-    #_privateSomething = 1;
-    publicSomething = 2;
-    constructor(public name: string, public age: number) {
+    #_age = 0;
+    constructor(public name: string) {
+      this.#_age = 0;
+    }
+
+    setAge(age: number) {
+      this.#_age = age;
+    }
+
+    getAge() {
+      return this.#_age;
+    }
+
+    [toDeserialize](
+      value: {
+        name: string;
+        age: number;
+      },
+    ) {
+      this.name = value.name;
+      this.#_age = value.age;
     }
   }
 
   const spyConsole = spy(console, "warn");
 
   const deserialized = deserialize(
-    'TestUser{"name":"wan2land","age":20,"publicSomething":2}',
+    'TestUser{"name":"wan2land","age":20}',
     { classes: { TestUser } },
-  );
+  ) as TestUser;
 
-  assertEquals(deserialized, new TestUser("wan2land", 20));
-  assertEquals(deserialized instanceof TestUser, true);
+  assertInstanceOf(deserialized, TestUser);
+
+  assertEquals(deserialized.name, "wan2land");
+  assertEquals(deserialized.getAge(), 20);
 
   assertEquals(spyConsole.calls.length, 0);
 
@@ -226,43 +268,54 @@ Deno.test("deserialize class", () => {
 });
 
 Deno.test("deserialize class with private", () => {
-  class TestUser {
-    static [toDeserialize](
-      values: {
+  class User {
+    #comments: Comment[] = [];
+
+    constructor(public name: string) {
+    }
+
+    [toDeserialize](
+      value: {
         name: string;
-        age: number;
-        publicSomething: number;
-        privateSomething: number;
+        comments: Comment[];
       },
     ) {
-      const user = new TestUser(values.name, values.age);
-      user.publicSomething = values.publicSomething;
-      user.#_privateSomething = values.privateSomething;
-      return user;
+      this.name = value.name;
+      this.#comments = value.comments;
     }
 
-    #_privateSomething = 1;
-    publicSomething = 2;
-    constructor(public name: string, public age: number) {
+    writeComment(text: string) {
+      this.#comments.push(new Comment(text));
     }
 
-    get privateViaGetter() {
-      return this.#_privateSomething;
+    getComments() {
+      return this.#comments;
     }
   }
 
-  const spyConsole = spy(console, "warn");
+  class Comment {
+    constructor(public text: string) {}
+  }
 
   const deserialized = deserialize(
-    'TestUser{"name":"wan2land","age":20,"publicSomething":2,"privateSomething":30}',
-    { classes: { TestUser } },
-  ) as TestUser;
+    'User{"name":"wan2land","comments":$1};[$2,$3];Comment{"text":"hello world 1"};Comment{"text":"hello world 2"}',
+    {
+      classes: {
+        User,
+        Comment,
+      },
+    },
+  ) as User;
 
-  assertEquals(deserialized, new TestUser("wan2land", 20));
-  assertEquals(deserialized.privateViaGetter, 30);
-  assertInstanceOf(deserialized, TestUser);
+  assertInstanceOf(deserialized, User);
 
-  assertEquals(spyConsole.calls.length, 0);
+  assertEquals(deserialized.name, "wan2land");
 
-  spyConsole.restore();
+  const comments = deserialized.getComments();
+  assertEquals(comments.length, 2);
+
+  assertInstanceOf(comments[0], Comment);
+  assertInstanceOf(comments[1], Comment);
+  assertEquals(comments[0].text, "hello world 1");
+  assertEquals(comments[1].text, "hello world 2");
 });

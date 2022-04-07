@@ -83,8 +83,8 @@ Deno.test("parse string", () => {
 });
 
 Deno.test("parse array", () => {
-  assertEquals(parse("[]"), [[17, []]]);
-  assertEquals(parse('[null,true,false,1,10n,"..."]'), [[17, [
+  assertEquals(parse("[]"), [[16, []]]);
+  assertEquals(parse('[null,true,false,1,10n,"..."]'), [[16, [
     [1],
     [2, true],
     [2, false],
@@ -93,11 +93,11 @@ Deno.test("parse array", () => {
     [5, "..."],
   ]]]);
 
-  assertEquals(parse("  [  ]  "), [[17, []]]);
+  assertEquals(parse("  [  ]  "), [[16, []]]);
   assertEquals(
     parse('  [  null  ,  true  ,  false  ,  1  ,  10n  ,  "..."  ]  '),
     [[
-      17,
+      16,
       [
         [1],
         [2, true],
@@ -111,25 +111,25 @@ Deno.test("parse array", () => {
 });
 
 Deno.test("parse object", () => {
-  assertEquals(parse("{}"), [[18, null, []]]);
-  assertEquals(parse('{"name":"wan2land","age":20}'), [[18, null, [
+  assertEquals(parse("{}"), [[17, null, []]]);
+  assertEquals(parse('{"name":"wan2land","age":20}'), [[17, null, [
     [[5, "name"], [5, "wan2land"]],
     [[5, "age"], [3, 20]],
   ]]]);
-  assertEquals(parse("Something{}"), [[18, "Something", []]]);
-  assertEquals(parse("something{}"), [[18, "something", []]]);
+  assertEquals(parse("Something{}"), [[17, "Something", []]]);
+  assertEquals(parse("something{}"), [[17, "something", []]]);
 
-  assertEquals(parse("  {  }  "), [[18, null, []]]);
+  assertEquals(parse("  {  }  "), [[17, null, []]]);
   assertEquals(parse('  {  "name"  :  "wan2land"  ,  "age"  :  20  }  '), [[
-    18,
+    17,
     null,
     [
       [[5, "name"], [5, "wan2land"]],
       [[5, "age"], [3, 20]],
     ],
   ]]);
-  assertEquals(parse("  Something  {  }  "), [[18, "Something", []]]);
-  assertEquals(parse("  something  {  }  "), [[18, "something", []]]);
+  assertEquals(parse("  Something  {  }  "), [[17, "Something", []]]);
+  assertEquals(parse("  something  {  }  "), [[17, "something", []]]);
 });
 
 Deno.test("parse regexp", () => {
@@ -221,11 +221,11 @@ Deno.test("parse built-in Map", () => {
 });
 
 Deno.test("parse ref", () => {
-  assertEquals(parse("[$0]"), [[17, [[64, 0]]]]);
-  assertEquals(parse('{"a":$2}'), [[18, null, [[[5, "a"], [64, 2]]]]]);
+  assertEquals(parse("[$0]"), [[16, [[64, 0]]]]);
+  assertEquals(parse('{"a":$2}'), [[17, null, [[[5, "a"], [64, 2]]]]]);
 
-  assertEquals(parse("  [  $0  ]  "), [[17, [[64, 0]]]]);
-  assertEquals(parse('  {  "a"  :  $2  }  '), [[18, null, [[[5, "a"], [
+  assertEquals(parse("  [  $0  ]  "), [[16, [[64, 0]]]]);
+  assertEquals(parse('  {  "a"  :  $2  }  '), [[17, null, [[[5, "a"], [
     64,
     2,
   ]]]]]);

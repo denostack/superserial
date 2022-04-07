@@ -25,16 +25,16 @@ export type AstBigInt = [type: 4, value: bigint];
 export type AstString = [type: 5, value: string];
 export type AstSymbol = [type: 6, description: string | null];
 
-export type AstArray = [type: 17, values: AstAny[]];
+export type AstArray = [type: 16, items: AstAny[]];
 export type AstObject = [
-  type: 18,
+  type: 17,
   name: string | null,
   entries: [AstString, AstAny][],
 ];
 
 export type AstRegExp = [type: 32, pattern: string, flags: string | null];
 export type AstDate = [type: 33, timestamp: number];
-export type AstSet = [type: 34, values: AstAny[]];
+export type AstSet = [type: 34, items: AstAny[]];
 export type AstMap = [type: 35, entries: [AstAny, AstAny][]];
 
 export type AstRef = [type: 64, index: number];
@@ -274,7 +274,7 @@ function parseArray(): AstArray {
   white();
   if (buf[pos] === "]") {
     pos++;
-    return [17, []];
+    return [16, []];
   }
 
   const result = [] as AstAny[];
@@ -288,7 +288,7 @@ function parseArray(): AstArray {
   }
   if (buf[pos] === "]") {
     pos++;
-    return [17, result];
+    return [16, result];
   }
   throw error();
 }
@@ -298,7 +298,7 @@ function parseObject(name: string | null = null): AstObject {
   white();
   if (buf[pos] === "}") {
     pos++;
-    return [18, name, []];
+    return [17, name, []];
   }
   const result = [] as [AstString, AstAny][];
   while (1) {
@@ -317,7 +317,7 @@ function parseObject(name: string | null = null): AstObject {
     }
     if (buf[pos] === "}") {
       pos++;
-      return [18, name, result];
+      return [17, name, result];
     }
     break;
   }
