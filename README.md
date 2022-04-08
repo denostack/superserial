@@ -256,7 +256,3 @@ const serializer = new Serializer({ classes: { TestUser } });
   console.log(user.getAge()); // 20
 }
 ```
-
-## TODO
-
-- [ ] `function` type
