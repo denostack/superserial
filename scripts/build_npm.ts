@@ -13,6 +13,9 @@ await build({
     deno: false,
   },
   test: false,
+  compilerOptions: {
+    lib: ["es2021", "dom"],
+  },
   package: {
     name: "superserial",
     version,
