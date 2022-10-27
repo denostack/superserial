@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 
-import { assertEquals } from "https://deno.land/std@0.131.0/testing/asserts.ts";
+import { assertEquals } from "testing/asserts.ts";
 import { serialize } from "./serialize.ts";
 import { toSerialize } from "./symbol.ts";
 
@@ -182,7 +182,7 @@ Deno.test("serialize class", () => {
 
   assertEquals(
     serialize(user),
-    'TestUser{"name":"wan2land","age":20,"publicSomething":2}',
+    'TestUser{"publicSomething":2,"name":"wan2land","age":20}',
   );
 });
 

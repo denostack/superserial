@@ -5,8 +5,8 @@ import {
   assertInstanceOf,
   assertNotStrictEquals,
   assertStrictEquals,
-} from "https://deno.land/std@0.131.0/testing/asserts.ts";
-import { assertSpyCall, spy } from "https://deno.land/x/mock@0.15.0/mod.ts";
+} from "testing/asserts.ts";
+import { assertSpyCall, spy } from "testing/mock.ts";
 
 import { deserialize } from "./deserialize.ts";
 import { toDeserialize } from "./symbol.ts";

@@ -1,4 +1,4 @@
-import { build, emptyDir } from "https://deno.land/x/dnt@0.22.0/mod.ts";
+import { build, emptyDir } from "dnt/mod.ts";
 
 const cmd = Deno.run({ cmd: ["git", "describe", "--tags"], stdout: "piped" });
 const version = new TextDecoder().decode(await cmd.output()).trim();
