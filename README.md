@@ -7,11 +7,7 @@
   <img alt="Language Typescript" src="https://img.shields.io/badge/language-Typescript-007acc.svg?style=flat-square" />
 </p>
 
-After data transfer, when the object needs to be restored, `JSON` has many
-limitations. It does not support values such as `Infinity` and `NaN`, and does
-not provide circular references.
-
-**superserial** provides serialization in any way you can imagine.
+Serializer/Deserializer that supports everything you can imagine.
 
 ## Usage
 
