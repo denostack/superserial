@@ -5,7 +5,7 @@ import { deserialize } from "./deserialize.ts";
 
 export interface SerializerOptions {
   // deno-lint-ignore ban-types
-  classes?: { [className: string]: ((new (...args: any[]) => any) | Function) };
+  classes?: { [className: string]: (new (...args: any[]) => any) | Function };
 }
 
 export class Serializer {
