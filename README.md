@@ -1,6 +1,8 @@
 # superserial
 
 <p>
+  <a href="https://github.com/denostack/superserial/actions"><img alt="Build" src="https://img.shields.io/github/workflow/status/denostack/superserial/CI?style=flat-square" /></a>
+  <a href="https://codecov.io/gh/denostack/superserial"><img alt="Coverage" src="https://img.shields.io/codecov/c/gh/denostack/superserial?style=flat-square" /></a>
   <a href="https://npmcharts.com/compare/superserial?minimal=true"><img alt="Downloads" src="https://img.shields.io/npm/dt/superserial.svg?style=flat-square" /></a>
   <a href="https://www.npmjs.com/package/superserial"><img alt="Version" src="https://img.shields.io/npm/v/superserial.svg?style=flat-square" /></a>
   <a href="https://www.npmjs.com/package/superserial"><img alt="License" src="https://img.shields.io/npm/l/superserial.svg?style=flat-square" /></a>

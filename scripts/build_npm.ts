@@ -20,8 +20,15 @@ await build({
     name: "superserial",
     version,
     description:
-      "superserial provides serialization in any way you can imagine",
-    keywords: ["serialize", "JSON", "flatted", "circular"],
+      "Serializer/Deserializer that supports everything you can imagine.",
+    keywords: [
+      "serialize",
+      "serializer",
+      "serialization",
+      "JSON",
+      "flatted",
+      "circular",
+    ],
     license: "MIT",
     repository: {
       type: "git",
