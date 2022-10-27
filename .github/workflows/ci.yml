@@ -24,6 +24,12 @@ jobs:
       - name: Lint
         run: deno lint
       - name: Unit Test
-        run: deno test
+        run: deno test --coverage=coverage
+      - name: Create coverage report
+        run:  deno coverage ./coverage --lcov > coverage.lcov
+      - name: Collect coverage
+        uses: codecov/codecov-action@v1.0.10
+        with:
+          file: ./coverage.lcov
       - name: Build Module
         run: deno task build:npm
