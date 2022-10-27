@@ -19,7 +19,9 @@
  * @module
  */
 
-export { serialize } from "./serialize.ts";
-export { deserialize } from "./deserialize.ts";
+export { Serializer, type SerializerOptions } from "./serializer.ts";
+
+export { serialize, type SerializeOptions } from "./serialize.ts";
+export { deserialize, type DeserializeOptions } from "./deserialize.ts";
 
 export { toDeserialize, toSerialize } from "./symbol.ts";
