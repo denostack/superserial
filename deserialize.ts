@@ -5,7 +5,7 @@ import { toDeserialize } from "./symbol.ts";
 
 export interface DeserializeOptions {
   // deno-lint-ignore ban-types
-  classes?: { [className: string]: ((new (...args: any[]) => any) | Function) };
+  classes?: { [className: string]: (new (...args: any[]) => any) | Function };
 }
 
 export function deserialize(
