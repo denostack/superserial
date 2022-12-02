@@ -1,10 +1,13 @@
 # superserial
 
+<a href="https://github.com/denostack"><img src="https://raw.githubusercontent.com/denostack/images/main/logo.svg" width="240" /></a>
+
 <p>
-  <a href="https://github.com/denostack/superserial/actions"><img alt="Build" src="https://img.shields.io/github/workflow/status/denostack/superserial/CI?style=flat-square" /></a>
+  <a href="https://github.com/denostack/superserial/actions"><img alt="Build" src="https://img.shields.io/github/workflow/status/denostack/superserial/CI?logo=github&style=flat-square" /></a>
   <a href="https://codecov.io/gh/denostack/superserial"><img alt="Coverage" src="https://img.shields.io/codecov/c/gh/denostack/superserial?style=flat-square" /></a>
   <a href="https://npmcharts.com/compare/superserial?minimal=true"><img alt="Downloads" src="https://img.shields.io/npm/dt/superserial.svg?style=flat-square" /></a>
   <a href="https://www.npmjs.com/package/superserial"><img alt="Version" src="https://img.shields.io/npm/v/superserial.svg?style=flat-square" /></a>
+  <a href="https://deno.land/x/superserial"><img alt="deno.land/x/superserial" src="https://img.shields.io/github/v/release/denostack/superserial?display_name=tag&label=deno.land/x/superserial@&style=flat-square&logo=deno&labelColor=000&color=777" /></a>
   <a href="https://www.npmjs.com/package/superserial"><img alt="License" src="https://img.shields.io/npm/l/superserial.svg?style=flat-square" /></a>
   <img alt="Language Typescript" src="https://img.shields.io/badge/language-Typescript-007acc.svg?style=flat-square" />
 </p>
