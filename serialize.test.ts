@@ -1,5 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
-
 import { assertEquals } from "testing/asserts.ts";
 import { serialize } from "./serialize.ts";
 import { toSerialize } from "./symbol.ts";
@@ -59,7 +57,7 @@ Deno.test("serialize built-in Set circular", () => {
 Deno.test("serialize built-in Map", () => {
   assertEquals(
     serialize(
-      new Map<any, any>([
+      new Map<unknown, unknown>([
         ["string", "this is string"],
         [true, "boolean"],
         [null, "null"],
@@ -76,14 +74,17 @@ Deno.test("serialize build-in Map deep", () => {
 
   assertEquals(
     serialize(
-      new Map<any, any>([["key1", map1] as const, [map2, "val2"] as const]),
+      new Map<unknown, unknown>([
+        ["key1", map1] as const,
+        [map2, "val2"] as const,
+      ]),
     ),
     'Map("key1"=>$1,$2=>"val2");Map("key1_1"=>"value1_1","key1_2"=>"value1_2");Map("key2_1"=>"value2_1","key2_2"=>"value2_2")',
   );
 });
 
 Deno.test("serialize build-in Map circular", () => {
-  const map1 = new Map<any, any>();
+  const map1 = new Map<unknown, unknown>();
   map1.set(map1, map1);
 
   assertEquals(
@@ -91,7 +92,7 @@ Deno.test("serialize build-in Map circular", () => {
     "Map($0=>$0)",
   );
 
-  const map2 = new Map<any, any>();
+  const map2 = new Map<unknown, unknown>();
   map2.set(map2, "val");
   map2.set("key", map2);
 
@@ -144,15 +145,23 @@ Deno.test("serialize object", () => {
 });
 
 Deno.test("serialize object self circular", () => {
-  const selfCircular = {} as any;
+  const selfCircular = {} as { selfCircular: unknown };
   selfCircular.selfCircular = selfCircular;
   assertEquals(serialize(selfCircular), '{"selfCircular":$0}');
 });
 
 Deno.test("serialize object circular", () => {
-  const parent = {} as any;
-  const child1 = { parent } as any;
-  const child2 = { parent } as any;
+  const parent = {} as { children: unknown[] };
+  const child1 = { parent } as {
+    parent: unknown;
+    next: unknown;
+    siblings: unknown[];
+  };
+  const child2 = { parent } as {
+    parent: unknown;
+    next: unknown;
+    siblings: unknown[];
+  };
   const children = [child1, child2];
   child1.next = child2;
   child1.siblings = children;

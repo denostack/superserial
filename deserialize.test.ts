@@ -1,5 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
-
 import {
   assertEquals,
   assertInstanceOf,
@@ -39,15 +37,15 @@ Deno.test("deserialize extend scalar", () => {
 });
 
 Deno.test("deserialize symbol", () => {
-  const symbol1 = deserialize("Symbol()");
+  const symbol1 = deserialize<symbol>("Symbol()");
   assertEquals(typeof symbol1, "symbol");
   assertEquals(symbol1.description, undefined);
 
-  const symbol2 = deserialize('Symbol("desc1")');
+  const symbol2 = deserialize<symbol>('Symbol("desc1")');
   assertEquals(typeof symbol2, "symbol");
   assertEquals(symbol2.description, "desc1");
 
-  const deserialized = deserialize(
+  const deserialized = deserialize<[symbol, symbol, symbol, [symbol]]>(
     '[$1,$2,$3,$4];Symbol("sym1");Symbol("sym2");Symbol("sym1");[$2]',
   );
   assertEquals(deserialized[0].description, "sym1");
@@ -69,7 +67,7 @@ Deno.test("deserialize built-in Set", () => {
 });
 
 Deno.test("deserialize built-in Set circular", () => {
-  const deserialized = deserialize("Set($0)");
+  const deserialized = deserialize<Set<unknown>>("Set($0)");
   assertStrictEquals(
     deserialized,
     [...deserialized][0],
@@ -81,7 +79,7 @@ Deno.test("deserialize built-in Map", () => {
     deserialize(
       'Map("string"=>"this is string",true=>"boolean",null=>"null",$1=>"object");{}',
     ),
-    new Map<any, any>([
+    new Map<unknown, unknown>([
       ["string", "this is string"],
       [true, "boolean"],
       [null, "null"],
@@ -98,19 +96,22 @@ Deno.test("deserialize build-in Map deep", () => {
     deserialize(
       'Map("key1"=>$1,$2=>"val2");Map("key1_1"=>"value1_1","key1_2"=>"value1_2");Map("key2_1"=>"value2_1","key2_2"=>"value2_2")',
     ),
-    new Map<any, any>([["key1", map1] as const, [map2, "val2"] as const]),
+    new Map<unknown, unknown>([
+      ["key1", map1] as const,
+      [map2, "val2"] as const,
+    ]),
   );
 });
 
 Deno.test("deserialize build-in Map circular", () => {
-  const map1 = deserialize("Map($0=>$0)") as Map<any, any>;
+  const map1 = deserialize("Map($0=>$0)") as Map<unknown, unknown>;
   const keys1 = [...map1.keys()];
   assertEquals(keys1.length, 1);
 
   assertStrictEquals(keys1[0], map1);
   assertStrictEquals(map1.get(map1), map1);
 
-  const map2 = deserialize('Map($0=>"val","key"=>$0)') as Map<any, any>;
+  const map2 = deserialize('Map($0=>"val","key"=>$0)') as Map<unknown, unknown>;
   const keys2 = [...map2.keys()];
   assertEquals(keys2.length, 2);
   assertStrictEquals(map2.get(map2), "val");
@@ -159,14 +160,18 @@ Deno.test("deserialize object", () => {
 });
 
 Deno.test("deserialize object self circular", () => {
-  const result = deserialize('{"boolean":false,"self":$0}');
+  const result = deserialize<{ boolean: false; self: unknown }>(
+    '{"boolean":false,"self":$0}',
+  );
 
   assertEquals(result.boolean, false);
   assertStrictEquals(result.self, result);
 });
 
 Deno.test("deserialize object circular", () => {
-  const result = deserialize(
+  const result = deserialize<
+    { children: { parent: unknown; sibling: unknown }[] }
+  >(
     '{"children":[$1,$2]};{"parent":$0,"sibling":$2};{"parent":$0,"sibling":$1}',
   );
 

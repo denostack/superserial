@@ -1,5 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
-
 import { AstAny, AstRoot, parse } from "./parse.ts";
 import { toDeserialize } from "./symbol.ts";
 import { ConstructType } from "./types.ts";
@@ -13,10 +11,10 @@ export interface DeserializeOptions {
   loadClass?: ClassLoadHandler;
 }
 
-export function deserialize(
+export function deserialize<T = unknown>(
   ctx: string,
   options: DeserializeOptions = {},
-): any {
+): T {
   const mapClasses = options.classes ?? {};
   const loadClass: ClassLoadHandler = options.loadClass ?? ((name) => {
     const foundClass = name ? mapClasses[name] ?? null : null;
@@ -26,8 +24,8 @@ export function deserialize(
     return foundClass;
   });
 
-  const refs = [] as any[];
-  const valueMap = new Map<AstAny, any>();
+  const refs = [] as unknown[];
+  const valueMap = new Map<AstAny, unknown>();
   const resolvers = [] as (() => void)[];
 
   function transformAstAny(ast: AstAny) {
@@ -62,7 +60,7 @@ export function deserialize(
         return value;
       }
       case 16: {
-        const value = [] as any[];
+        const value = [] as unknown[];
         valueMap.set(ast, value);
         const items = ast[1];
         resolvers.push(() => {
@@ -134,5 +132,5 @@ export function deserialize(
     resolver();
   }
 
-  return refs[0];
+  return refs[0] as T;
 }
