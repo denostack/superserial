@@ -2,10 +2,15 @@
 
 import { AstAny, AstRoot, parse } from "./parse.ts";
 import { toDeserialize } from "./symbol.ts";
+import { ConstructType } from "./types.ts";
+
+export type ClassLoadHandler = (
+  name: string,
+) => ConstructType<unknown> | null | undefined;
 
 export interface DeserializeOptions {
-  // deno-lint-ignore ban-types
-  classes?: { [className: string]: (new (...args: any[]) => any) | Function };
+  classes?: { [className: string]: ConstructType<unknown> };
+  loadClass?: ClassLoadHandler;
 }
 
 export function deserialize(
@@ -13,6 +18,13 @@ export function deserialize(
   options: DeserializeOptions = {},
 ): any {
   const mapClasses = options.classes ?? {};
+  const loadClass: ClassLoadHandler = options.loadClass ?? ((name) => {
+    const foundClass = name ? mapClasses[name] ?? null : null;
+    if (name && !foundClass) {
+      console.warn(`Class ${name} is not defined. It will be ignored.`);
+    }
+    return foundClass;
+  });
 
   const refs = [] as any[];
   const valueMap = new Map<AstAny, any>();
@@ -62,11 +74,7 @@ export function deserialize(
         const name = ast[1];
         const entries = ast[2];
 
-        const baseClass = name ? mapClasses[name] ?? null : null;
-        if (name && !baseClass) {
-          console.warn(`Class ${name} is not defined. It will be ignored.`);
-        }
-
+        const baseClass = name ? loadClass(name) ?? null : null;
         const value = baseClass ? Reflect.construct(baseClass, []) : {};
         valueMap.set(ast, value);
         resolvers.push(() => {

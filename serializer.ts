@@ -1,11 +1,12 @@
 // deno-lint-ignore-file no-explicit-any
 
 import { serialize, SerializeOptions } from "./serialize.ts";
-import { deserialize } from "./deserialize.ts";
+import { ClassLoadHandler, deserialize } from "./deserialize.ts";
+import { ConstructType } from "./types.ts";
 
 export interface SerializerOptions {
-  // deno-lint-ignore ban-types
-  classes?: { [className: string]: (new (...args: any[]) => any) | Function };
+  classes?: { [className: string]: ConstructType<unknown> };
+  loadClass?: ClassLoadHandler;
 }
 
 export class Serializer {
