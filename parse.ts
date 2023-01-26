@@ -74,9 +74,9 @@ function white() {
 
 function error() {
   return new SyntaxError(
-    `Unexpected ${
-      buf[pos] ? `token ${buf[pos]}` : "end"
-    } in SuperSerial at position ${pos}`,
+    buf[pos]
+      ? `Unexpected token '${buf[pos]}' in SuperSerial at position ${pos + 1}`
+      : "Unexpected end of SuperSerial input",
   );
 }
 
@@ -209,6 +209,9 @@ function parseString(): AstString {
   let result = "";
   pos++;
   while (1) {
+    if (pos >= buf.length) {
+      break;
+    }
     switch (buf[pos]) {
       case '"':
         pos++;
