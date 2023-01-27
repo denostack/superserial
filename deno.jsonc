@@ -11,7 +11,7 @@
     }
   },
   "tasks": {
-    "bench": "deno run --allow-run=deno --allow-write=.benchmark scripts/bench.ts",
+    "bench": "deno run --allow-run=deno --allow-write=.benchmark scripts/benchmark.ts",
     "test": "deno task test:unit && deno task test:lint && deno task test:format && deno task test:types",
     "test:format": "deno fmt --check",
     "test:lint": "deno lint",

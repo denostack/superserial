@@ -1,4 +1,7 @@
 import { Serializer } from "../serializer.ts";
+import * as devalue from "npm:devalue@4.2.2";
+import * as flatted from "npm:flatted@3.2.7";
+import * as superjson from "npm:superjson@1.12.2";
 
 const origin = {
   string: "String",
@@ -31,21 +34,72 @@ Deno.bench({
   },
 });
 
-const serialized1 = serializer.serialize(origin);
+Deno.bench({
+  name: "serialize #devalue.stringify",
+  group: "serialize",
+  fn: () => {
+    devalue.stringify(origin);
+  },
+});
+
+Deno.bench({
+  name: "serialize #flatted.stringify",
+  group: "serialize",
+  fn: () => {
+    flatted.stringify(origin);
+  },
+});
+
+Deno.bench({
+  name: "serialize #superjson.stringify",
+  group: "serialize",
+  fn: () => {
+    superjson.stringify(origin);
+  },
+});
+
+const serializedSuperserial = serializer.serialize(origin);
 Deno.bench({
   name: "serialize #Serializer.deserialize",
   baseline: true,
   group: "deserialize",
   fn: () => {
-    serializer.deserialize(serialized1);
+    serializer.deserialize(serializedSuperserial);
   },
 });
 
-const serialized2 = JSON.stringify(origin);
+const serializedJson = JSON.stringify(origin);
 Deno.bench({
   name: "serialize #JSON.parse",
   group: "deserialize",
   fn: () => {
-    JSON.parse(serialized2);
+    JSON.parse(serializedJson);
+  },
+});
+
+const serializedDevalue = devalue.stringify(origin);
+Deno.bench({
+  name: "serialize #devalue.parse",
+  group: "deserialize",
+  fn: () => {
+    devalue.parse(serializedDevalue);
+  },
+});
+
+const serializedFlatted = flatted.stringify(origin);
+Deno.bench({
+  name: "serialize #flatted.parse",
+  group: "deserialize",
+  fn: () => {
+    flatted.parse(serializedFlatted);
+  },
+});
+
+const serializedSuperjson = superjson.stringify(origin);
+Deno.bench({
+  name: "serialize #superjson.parse",
+  group: "deserialize",
+  fn: () => {
+    superjson.parse(serializedSuperjson);
   },
 });
