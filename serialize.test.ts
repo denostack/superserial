@@ -191,7 +191,7 @@ Deno.test("serialize class", () => {
 
   assertEquals(
     serialize(user),
-    'TestUser{"publicSomething":2,"name":"wan2land","age":20}',
+    'TestUser{"name":"wan2land","age":20,"publicSomething":2}',
   );
 });
 
