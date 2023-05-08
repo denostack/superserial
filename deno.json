@@ -6,14 +6,10 @@
     "testing/": "https://deno.land/std@0.167.0/testing/"
   },
   "lint": {
-    "files": {
-      "exclude": [".npm"]
-    }
+    "exclude": [".npm"]
   },
   "fmt": {
-    "files": {
-      "exclude": [".npm"]
-    }
+    "exclude": [".npm"]
   },
   "tasks": {
     "bench": "deno run --allow-run=deno --allow-write=.benchmark scripts/benchmark.ts",
