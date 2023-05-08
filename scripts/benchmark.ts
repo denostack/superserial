@@ -1,13 +1,15 @@
 import ansiToSvg from "ansi-to-svg";
 
-const cmd = Deno.run({
-  cmd: ["deno", "bench"],
+const cmd = new Deno.Command("deno", {
+  args: ["bench"],
   stdout: "piped",
   stderr: "piped",
 });
 
+const commandOutput = await cmd.spawn().output();
+
 const decoder = new TextDecoder();
-const output = decoder.decode(await cmd.output());
+const output = decoder.decode(commandOutput.stdout);
 
 const svg: string = ansiToSvg(output, {
   paddingTop: 4,
