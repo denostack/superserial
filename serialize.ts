@@ -125,7 +125,8 @@ export function serialize(value: any, options: SerializeOptions = {}): string {
       return true;
     }
 
-    const name = value.constructor !== Object && value.constructor !== Function
+    const name = value.constructor && value.constructor !== Object &&
+        value.constructor !== Function
       ? value.constructor.name
       : "";
 

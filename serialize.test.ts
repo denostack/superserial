@@ -179,6 +179,10 @@ Deno.test("serialize function (not support)", () => {
   assertEquals(serialize(function () {}), "{}");
 });
 
+Deno.test("serialize object prototype null", () => {
+  assertEquals(serialize(Object.create(null)), "{}");
+});
+
 Deno.test("serialize class", () => {
   class TestUser {
     #_privateSomething = 1;
