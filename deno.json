@@ -1,4 +1,5 @@
 {
+  "version": "0.3.4",
   "imports": {
     "ansi-to-svg": "npm:ansi-to-svg@1.4.3",
     "dnt/": "https://deno.land/x/dnt@0.32.1/",
