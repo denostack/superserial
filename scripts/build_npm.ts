@@ -1,15 +1,10 @@
 import { build, emptyDir } from "dnt/mod.ts";
 import { bgGreen } from "fmt/colors.ts";
 
-const cmd = new Deno.Command("git", {
-  args: ["describe", "--tags", "--abbrev=0"],
-  stdout: "piped",
-  stderr: "piped",
-});
-
-const commandOutput = await cmd.spawn().output();
-
-const version = new TextDecoder().decode(commandOutput.stdout).trim();
+const denoInfo = JSON.parse(
+  Deno.readTextFileSync(new URL("../deno.json", import.meta.url)),
+);
+const version = denoInfo.version;
 
 console.log(bgGreen(`version: ${version}`));
 
@@ -29,7 +24,7 @@ await build({
     name: "superserial",
     version,
     description:
-      "Serializer/Deserializer that supports everything you can imagine.",
+      "A comprehensive Serializer/Deserializer that can handle any data type.",
     keywords: [
       "serialize",
       "serializer",

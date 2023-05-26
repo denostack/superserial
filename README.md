@@ -11,7 +11,7 @@
   <a href="https://npmcharts.com/compare/superserial?minimal=true"><img alt="Downloads" src="https://img.shields.io/npm/dt/superserial.svg?style=flat-square" /></a>
 </p>
 
-Serializer/Deserializer that supports everything you can imagine.
+A comprehensive Serializer/Deserializer that can handle any data type.
 
 ## Usage
 
