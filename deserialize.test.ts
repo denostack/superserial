@@ -30,6 +30,12 @@ Deno.test("deserialize scalar", () => {
   assertEquals(deserialize('"string"'), "string");
 });
 
+Deno.test("deserialize string with escape", () => {
+  assertEquals(deserialize('"\\\\"'), "\\");
+  assertEquals(deserialize('"\\\\x00"'), "\\x00");
+  assertEquals(deserialize('"\\u0000"'), "\x00");
+});
+
 Deno.test("deserialize extend scalar", () => {
   assertEquals(deserialize("NaN"), NaN);
   assertEquals(deserialize("Infinity"), Infinity);

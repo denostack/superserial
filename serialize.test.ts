@@ -26,6 +26,12 @@ Deno.test("serialize scalar", () => {
   assertEquals(serialize("string"), '"string"');
 });
 
+Deno.test("serialize string with escape", () => {
+  assertEquals(serialize("\\"), '"\\\\"');
+  assertEquals(serialize("\\x00"), '"\\\\x00"');
+  assertEquals(serialize("\x00"), '"\\u0000"');
+});
+
 Deno.test("serialize extend scalar", () => {
   assertEquals(serialize(NaN), "NaN");
   assertEquals(serialize(Infinity), "Infinity");

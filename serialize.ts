@@ -16,7 +16,7 @@ export function serialize(value: any, options: SerializeOptions = {}): string {
   const objectIndexMap = new Map<any, number>();
 
   function _stringifyString(value: string): boolean {
-    output += `"${value.replace('"', '\\"')}"`; // " 문자는 escape 해야합니다.
+    output += JSON.stringify(value); // fastest way
     return true;
   }
   function _stringifyScalar(value: any): boolean {
