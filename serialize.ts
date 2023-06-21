@@ -1,16 +1,21 @@
 // deno-lint-ignore-file no-explicit-any
+import { builtInTransformersMap } from "./builtin_transformers.ts";
 import { toSerialize } from "./symbol.ts";
+import { Transformer } from "./transformer.ts";
 
 export interface SerializeOptions {
-  prettify?: boolean;
+  transformers?: Map<any, Transformer<any, any>>;
 }
 
-export function serialize(value: any, options: SerializeOptions = {}): string {
+export function serialize(
+  value: any,
+  options: SerializeOptions = {},
+): string {
+  const transformers = options.transformers ?? builtInTransformersMap;
+
   let output = "";
 
   let inc = 0;
-  const prettify = options.prettify ?? false;
-  let depth = 0;
 
   const objectMap = new Map<number, any>();
   const objectIndexMap = new Map<any, number>();
@@ -93,17 +98,12 @@ export function serialize(value: any, options: SerializeOptions = {}): string {
       return true;
     }
 
-    if (value instanceof Date) {
-      output += "Date(";
-      _stringifyAny(value.getTime());
-      output += ")";
-      return true;
-    }
-
-    // complex :D
-    if (prettify) {
-      output += "  ".repeat(depth);
-    }
+    // if (value instanceof Date) {
+    //   output += "Date(";
+    //   _stringifyAny(value.getTime());
+    //   output += ")";
+    //   return true;
+    // }
 
     if (Array.isArray(value)) {
       _stringifyListStart("[");
@@ -112,17 +112,27 @@ export function serialize(value: any, options: SerializeOptions = {}): string {
       return true;
     }
 
-    if (value instanceof Map) {
-      _stringifyListStart("Map(");
-      _stringifyMap([...value.entries()]);
-      _stringifyListEnd(")");
-      return true;
-    }
-    if (value instanceof Set) {
-      _stringifyListStart("Set(");
-      _stringifyList([...value]);
-      _stringifyListEnd(")");
-      return true;
+    const ctor = value.constructor;
+    const transformer = transformers.get(ctor);
+    if (transformer) {
+      const name = transformer.name ?? ctor.name;
+      const serialized = transformer.serialize?.(value) ?? value;
+      if (Array.isArray(serialized)) {
+        _stringifyListStart(`${name}(`);
+        _stringifyList(serialized);
+        _stringifyListEnd(")");
+        return true;
+      }
+      console.log(value);
+      if (value instanceof Map) {
+        _stringifyListStart(`${name}(`);
+        _stringifyMap([...value.entries()]);
+        _stringifyListEnd(")");
+        return true;
+      }
+      _stringifyListStart(`${name}{`);
+      _stringifyKv(Object.entries(serialized));
+      _stringifyListEnd("}");
     }
 
     const name = value.constructor && value.constructor !== Object &&
@@ -130,7 +140,7 @@ export function serialize(value: any, options: SerializeOptions = {}): string {
       ? value.constructor.name
       : "";
 
-    _stringifyListStart(prettify && name ? `${name} {` : `${name}{`);
+    _stringifyListStart(`${name}{`);
     _stringifyKv(
       Object.entries(
         typeof value[toSerialize] === "function" ? value[toSerialize]() : value,
@@ -140,91 +150,42 @@ export function serialize(value: any, options: SerializeOptions = {}): string {
     return true;
   }
 
-  const _stringifyListStart = prettify
-    ? (name: string) => {
-      output += name;
-      output += "\n";
-      depth++;
-    }
-    : (name: string) => {
-      output += name;
-      depth++;
-    };
+  const _stringifyListStart = (name: string) => {
+    output += name;
+  };
 
-  const _stringifyListEnd = prettify
-    ? (name: string) => {
-      depth--;
-      output += "\n";
-      output += "  ".repeat(depth);
-      output += name;
-    }
-    : (name: string) => {
-      depth--;
-      output += name;
-    };
+  const _stringifyListEnd = (name: string) => {
+    output += name;
+  };
 
-  const _stringifyList = prettify
-    ? (value: any[]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",\n";
-        }
-        output += "  ".repeat(depth);
-        _stringifyAny(value[i]);
+  const _stringifyList = (value: any[]) => {
+    for (let i = 0; i < value.length; i++) {
+      if (i > 0) {
+        output += ",";
       }
+      _stringifyAny(value[i]);
     }
-    : (value: any[]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",";
-        }
-        _stringifyAny(value[i]);
+  };
+  const _stringifyMap = (value: [string, any][]) => {
+    for (let i = 0; i < value.length; i++) {
+      if (i > 0) {
+        output += ",";
       }
-    };
-  const _stringifyMap = prettify
-    ? (value: [string, any][]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",\n";
-        }
-        output += "  ".repeat(depth);
-        _stringifyAny(value[i][0]);
-        output += " => ";
-        _stringifyAny(value[i][1]);
-      }
+      _stringifyAny(value[i][0]);
+      output += "=>";
+      _stringifyAny(value[i][1]);
     }
-    : (value: [string, any][]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",";
-        }
-        _stringifyAny(value[i][0]);
-        output += "=>";
-        _stringifyAny(value[i][1]);
+  };
+  const _stringifyKv = (value: [string, any][]) => {
+    for (let i = 0; i < value.length; i++) {
+      if (i > 0) {
+        output += ",";
       }
-    };
-  const _stringifyKv = prettify
-    ? (value: [string, any][]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",\n";
-        }
-        output += "  ".repeat(depth);
-        _stringifyString(value[i][0]);
-        output += ": ";
-        _stringifyAny(value[i][1]);
-      }
+      _stringifyString(value[i][0]);
+      output += ":";
+      _stringifyAny(value[i][1]);
     }
-    : (value: [string, any][]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",";
-        }
-        _stringifyString(value[i][0]);
-        output += ":";
-        _stringifyAny(value[i][1]);
-      }
-    };
+  };
 
   inc++;
   objectIndexMap.set(value, 0);
@@ -233,9 +194,6 @@ export function serialize(value: any, options: SerializeOptions = {}): string {
   _stringifyRoot(value);
   for (let i = 1; i < inc; i++) {
     output += ";";
-    if (prettify) {
-      output += "\n";
-    }
     _stringifyRoot(objectMap.get(i));
   }
   return output;
