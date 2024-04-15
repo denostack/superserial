@@ -205,6 +205,22 @@ Deno.test("serialize class", () => {
   );
 });
 
+Deno.test("serialize class with alias", () => {
+  class TestUser {
+    #_privateSomething = 1;
+    publicSomething = 2;
+    constructor(public name: string, public age: number) {
+    }
+  }
+
+  const user = new TestUser("wan2land", 20);
+
+  assertEquals(
+    serialize(user, { classNames: new Map([[TestUser, "AliasedTestUser"]]) }),
+    'AliasedTestUser{"name":"wan2land","age":20,"publicSomething":2}',
+  );
+});
+
 Deno.test("serialize class with private", () => {
   class TestUser {
     #_privateSomething = 1;

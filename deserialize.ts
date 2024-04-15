@@ -1,6 +1,6 @@
-import { AstAny, AstRoot, parse } from "./parse.ts";
+import { type AstAny, type AstRoot, parse } from "./parse.ts";
 import { toDeserialize } from "./symbol.ts";
-import { ConstructType } from "./types.ts";
+import type { ConstructType } from "./types.ts";
 
 export type ClassLoadHandler = (
   name: string,

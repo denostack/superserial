@@ -54,3 +54,28 @@ Deno.test("serializer, toSerialize, toDeserialize", () => {
     assertEquals(user.getAge(), 20);
   }
 });
+
+Deno.test("serializer, alias class names", () => {
+  class TestUser {
+    constructor(public name: string) {
+    }
+  }
+
+  const serializer = new Serializer({ classes: { AliasedTestUser: TestUser } });
+  {
+    const user = new TestUser("wan2land");
+
+    assertEquals(
+      serializer.serialize(user),
+      'AliasedTestUser{"name":"wan2land"}',
+    );
+  }
+  {
+    const user = serializer.deserialize<TestUser>(
+      'AliasedTestUser{"name":"wan2land"}',
+    );
+
+    assertInstanceOf(user, TestUser);
+    assertEquals(user.name, "wan2land");
+  }
+});

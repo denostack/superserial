@@ -1,7 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
 import { toSerialize } from "./symbol.ts";
+import type { ConstructType } from "./types.ts";
 
 export interface SerializeOptions {
+  classNames?: Map<ConstructType<unknown>, string>;
   prettify?: boolean;
 }
 
@@ -127,7 +129,7 @@ export function serialize(value: any, options: SerializeOptions = {}): string {
 
     const name = value.constructor && value.constructor !== Object &&
         value.constructor !== Function
-      ? value.constructor.name
+      ? (options.classNames?.get(value.constructor) ?? value.constructor.name)
       : "";
 
     _stringifyListStart(prettify && name ? `${name} {` : `${name}{`);

@@ -191,6 +191,36 @@ const user = serializer.deserialize(serialized);
 console.log(user); // TestUser { name: "wan2land", age: 20 }
 ```
 
+#### Alias
+
+If you want to serialize a class with a different name, you can use the
+`classes` option.
+
+```ts
+class TestUser {
+  constructor(
+    public name?: string,
+    public age?: number,
+  ) {
+  }
+}
+
+const serializer = new Serializer({
+  classes: {
+    AliasTestUser: TestUser,
+  },
+});
+```
+
+```ts
+const serialized = serializer.serialize(new TestUser("wan2land", 20));
+console.log(serialized);
+// AliasTestUser{"name":"wan2land","age":20}   <--- AliasTestUser
+
+const user = serializer.deserialize(serialized);
+console.log(user); // TestUser { name: "wan2land", age: 20 }
+```
+
 #### toSerialize / toDeserialize
 
 Private variables can be converted using two special symbols (`toSerialize`,
