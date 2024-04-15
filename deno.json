@@ -1,17 +1,6 @@
 {
+  "name": "@denostack/superserial",
   "version": "0.3.4",
-  "imports": {
-    "ansi-to-svg": "npm:ansi-to-svg@1.4.3",
-    "dnt/": "https://deno.land/x/dnt@0.32.1/",
-    "fmt/": "https://deno.land/std@0.167.0/fmt/",
-    "testing/": "https://deno.land/std@0.167.0/testing/"
-  },
-  "lint": {
-    "exclude": [".npm"]
-  },
-  "fmt": {
-    "exclude": [".npm"]
-  },
   "tasks": {
     "bench": "deno run --allow-run=deno --allow-write=.benchmark scripts/benchmark.ts",
     "test": "deno task test:unit && deno task test:lint && deno task test:format && deno task test:types",
@@ -20,5 +9,25 @@
     "test:unit": "deno test -A",
     "test:types": "deno check mod.ts",
     "build:npm": "deno run --allow-env --allow-read --allow-write --allow-net --allow-run scripts/build_npm.ts"
-  }
+  },
+  "imports": {
+    "@deno/dnt": "jsr:@deno/dnt@^0.41.1",
+    "@std/assert": "jsr:@std/assert@^0.222.1",
+    "@std/fmt": "jsr:@std/fmt@^0.222.1",
+    "@std/testing": "jsr:@std/testing@^0.222.1",
+    "ansi-to-svg": "npm:ansi-to-svg@1.4.3"
+  },
+  "exports": {
+    ".": "./mod.ts",
+    "./deserialize": "./deserialize.ts",
+    "./serialize": "./serialize.ts",
+    "./serializer": "./serializer.ts"
+  },
+  "lint": {
+    "exclude": [".npm"]
+  },
+  "fmt": {
+    "exclude": [".npm"]
+  },
+  "lock": false
 }

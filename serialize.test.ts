@@ -1,4 +1,4 @@
-import { assertEquals } from "testing/asserts.ts";
+import { assertEquals } from "@std/assert";
 import { serialize } from "./serialize.ts";
 import { toSerialize } from "./symbol.ts";
 

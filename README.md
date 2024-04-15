@@ -6,8 +6,9 @@
   <img alt="License" src="https://img.shields.io/npm/l/superserial.svg?style=flat-square" />
   <img alt="Language Typescript" src="https://img.shields.io/badge/language-Typescript-007acc.svg?style=flat-square" />
   <br />
-  <a href="https://deno.land/x/superserial"><img alt="deno.land/x/superserial" src="https://img.shields.io/badge/dynamic/json?url=https://api.github.com/repos/denostack/superserial/tags&query=$[0].name&display_name=tag&label=deno.land/x/superserial@&style=flat-square&logo=deno&labelColor=000&color=777" /></a>
-  <a href="https://www.npmjs.com/package/superserial"><img alt="Version" src="https://img.shields.io/npm/v/superserial.svg?style=flat-square&logo=npm" /></a>
+  <a href="https://jsr.io/@denostack/superserial"><img alt="JSR version" src="https://jsr.io/badges/@denostack/superserial?style=flat-square" /></a>
+  <a href="https://deno.land/x/superserial"><img alt="Deno version" src="https://deno.land/badge/superserial/version?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/superserial"><img alt="NPM Version" src="https://img.shields.io/npm/v/superserial.svg?style=flat-square&logo=npm" /></a>
   <a href="https://npmcharts.com/compare/superserial?minimal=true"><img alt="Downloads" src="https://img.shields.io/npm/dt/superserial.svg?style=flat-square" /></a>
 </p>
 
@@ -17,8 +18,12 @@ A comprehensive Serializer/Deserializer that can handle any data type.
 
 ### with Deno
 
+```bash
+deno add @denostack/superserial
+```
+
 ```ts
-import { Serializer } from "https://deno.land/x/superserial/mod.ts";
+import { Serializer } from "@denostack/superserial";
 
 const serializer = new Serializer();
 

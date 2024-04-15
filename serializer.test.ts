@@ -1,4 +1,4 @@
-import { assertEquals, assertInstanceOf } from "testing/asserts.ts";
+import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Serializer, toDeserialize, toSerialize } from "./mod.ts";
 
 Deno.test("serializer, toSerialize, toDeserialize", () => {

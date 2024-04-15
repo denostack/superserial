@@ -3,8 +3,8 @@ import {
   assertInstanceOf,
   assertNotStrictEquals,
   assertStrictEquals,
-} from "testing/asserts.ts";
-import { assertSpyCall, spy } from "testing/mock.ts";
+} from "@std/assert";
+import { assertSpyCall, spy } from "@std/testing/mock";
 
 import { deserialize } from "./deserialize.ts";
 import { toDeserialize } from "./symbol.ts";

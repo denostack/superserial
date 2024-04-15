@@ -1,5 +1,5 @@
-import { build, emptyDir } from "dnt/mod.ts";
-import { bgGreen } from "fmt/colors.ts";
+import { build, emptyDir } from "@deno/dnt";
+import { bgGreen } from "@std/fmt/colors";
 
 const denoInfo = JSON.parse(
   Deno.readTextFileSync(new URL("../deno.json", import.meta.url)),
@@ -18,7 +18,7 @@ await build({
   },
   test: false,
   compilerOptions: {
-    lib: ["es2021", "dom"],
+    lib: ["ES2021", "DOM"],
   },
   package: {
     name: "superserial",

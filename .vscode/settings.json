@@ -5,6 +5,8 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "denoland.vscode-deno",
   "cSpell.words": [
+    "deno",
+    "denostack",
     "superserial"
   ]
 }
