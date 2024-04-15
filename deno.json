@@ -1,6 +1,6 @@
 {
   "name": "@denostack/superserial",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "tasks": {
     "bench": "deno run --allow-run=deno --allow-write=.benchmark scripts/benchmark.ts",
     "test": "deno task test:unit && deno task test:lint && deno task test:format && deno task test:types",
