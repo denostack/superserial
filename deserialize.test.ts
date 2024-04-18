@@ -214,6 +214,31 @@ Deno.test("deserialize class object", () => {
   }
 });
 
+Deno.test("deserialize class object without constructor", () => {
+  class TestUser {
+    name?: string;
+    age?: number;
+  }
+
+  const spyConsole = spy(console, "warn");
+
+  try {
+    const deserialized = deserialize(
+      'TestUser{"name":"wan2land","age":20}',
+      { classes: { TestUser } },
+    ) as TestUser;
+
+    assertInstanceOf(deserialized, TestUser);
+
+    assertEquals(deserialized.name, "wan2land");
+    assertEquals(deserialized.age, 20);
+
+    assertEquals(spyConsole.calls.length, 0);
+  } finally {
+    spyConsole.restore();
+  }
+});
+
 Deno.test("deserialize class object with loadClass", () => {
   class TestUser {
     age = 0;
