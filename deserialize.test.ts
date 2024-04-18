@@ -197,18 +197,21 @@ Deno.test("deserialize class object", () => {
 
   const spyConsole = spy(console, "warn");
 
-  const deserialized = deserialize(
-    'TestUser{"name":"wan2land","age":20}',
-    { classes: { TestUser } },
-  ) as TestUser;
+  try {
+    const deserialized = deserialize(
+      'TestUser{"name":"wan2land","age":20}',
+      { classes: { TestUser } },
+    ) as TestUser;
 
-  assertInstanceOf(deserialized, TestUser);
+    assertInstanceOf(deserialized, TestUser);
 
-  assertEquals(deserialized.name, "wan2land");
-  assertEquals(deserialized.age, 20);
+    assertEquals(deserialized.name, "wan2land");
+    assertEquals(deserialized.age, 20);
 
-  assertEquals(spyConsole.calls.length, 0);
-  spyConsole.restore();
+    assertEquals(spyConsole.calls.length, 0);
+  } finally {
+    spyConsole.restore();
+  }
 });
 
 Deno.test("deserialize class object with loadClass", () => {
@@ -243,27 +246,29 @@ Deno.test("deserialize class object with loadClass", () => {
 Deno.test("deserialize class object undefined", () => {
   const spyConsole = spy(console, "warn");
 
-  assertEquals(
-    deserialize(
-      'TestUser{"name":"wan2land","age":20}',
-    ),
-    {
-      name: "wan2land",
-      age: 20,
-    },
-  );
+  try {
+    assertEquals(
+      deserialize(
+        'TestUser{"name":"wan2land","age":20}',
+      ),
+      {
+        name: "wan2land",
+        age: 20,
+      },
+    );
 
-  assertSpyCall(
-    spyConsole,
-    0,
-    {
-      args: [
-        "Class TestUser is not defined. It will be ignored.",
-      ],
-    },
-  );
-
-  spyConsole.restore();
+    assertSpyCall(
+      spyConsole,
+      0,
+      {
+        args: [
+          "Class TestUser is not defined. It will be ignored.",
+        ],
+      },
+    );
+  } finally {
+    spyConsole.restore();
+  }
 });
 
 Deno.test("deserialize class with private", () => {
@@ -294,19 +299,21 @@ Deno.test("deserialize class with private", () => {
 
   const spyConsole = spy(console, "warn");
 
-  const deserialized = deserialize(
-    'TestUser{"name":"wan2land","age":20}',
-    { classes: { TestUser } },
-  ) as TestUser;
+  try {
+    const deserialized = deserialize(
+      'TestUser{"name":"wan2land","age":20}',
+      { classes: { TestUser } },
+    ) as TestUser;
 
-  assertInstanceOf(deserialized, TestUser);
+    assertInstanceOf(deserialized, TestUser);
 
-  assertEquals(deserialized.name, "wan2land");
-  assertEquals(deserialized.getAge(), 20);
+    assertEquals(deserialized.name, "wan2land");
+    assertEquals(deserialized.getAge(), 20);
 
-  assertEquals(spyConsole.calls.length, 0);
-
-  spyConsole.restore();
+    assertEquals(spyConsole.calls.length, 0);
+  } finally {
+    spyConsole.restore();
+  }
 });
 
 Deno.test("deserialize class with private", () => {
