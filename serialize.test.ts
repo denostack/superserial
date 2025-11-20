@@ -60,7 +60,7 @@ Deno.test("serialize array", () => {
   assertEquals(serialize([]), "[[[]]]");
   assertEquals(
     serialize([[[{}, 2, "", false, []], [[]]], [1, 2], [1]]),
-    '[[[[0,1],[0,2],[0,3]]],[[[0,4],[0,5]]],[[1,2]],[[1]],[[[0,6],2,"",false,[0,7]]],[[[0,8]]],{},[[]],[[]]]',
+    '[[[[[[[{},2,"",false,[[]]]],[[[[]]]]]],[[1,2]],[[1]]]]]',
   );
 });
 
@@ -76,7 +76,7 @@ Deno.test("serialize array circular", () => {
   value.push(otherValue);
   otherValue.push(value);
 
-  assertEquals(serialize(value), "[[[[0,1]]],[[[0,0]]]]");
+  assertEquals(serialize(value), "[[[[[[0,0]]]]]]");
 });
 
 Deno.test("serialize object", () => {
@@ -90,7 +90,7 @@ Deno.test("serialize object", () => {
   );
   assertEquals(
     serialize({ foo: { bar: "bar string" } }),
-    '[{"foo":[0,1]},{"bar":"bar string"}]',
+    '[{"foo":{"bar":"bar string"}}]',
   );
 });
 
@@ -128,12 +128,12 @@ Deno.test("serialize object circular", () => {
 Deno.test("serialize object with array", () => {
   assertEquals(
     serialize([{ name: "wan2land" }, { name: "wan3land" }]),
-    '[[[[0,1],[0,2]]],{"name":"wan2land"},{"name":"wan3land"}]',
+    '[[[{"name":"wan2land"},{"name":"wan3land"}]]]',
   );
 
   assertEquals(
     serialize({ users: [{ name: "wan2land" }, { name: "wan3land" }] }),
-    '[{"users":[0,1]},[[[0,2],[0,3]]],{"name":"wan2land"},{"name":"wan3land"}]',
+    '[{"users":[[{"name":"wan2land"},{"name":"wan3land"}]]}]',
   );
 });
 
@@ -172,7 +172,7 @@ Deno.test("serialize named object with reducer", () => {
         ) => [{ name: value.name, age: value.getAge() }],
       ]]]),
     ),
-    '[["U",[0,1]],{"name":"wan2land","age":20}]',
+    '[["U",{"name":"wan2land","age":20}]]',
   );
 });
 
@@ -188,7 +188,7 @@ Deno.test("serialize Symbol", () => {
   const symbol2 = Symbol("sym2");
   assertEquals(
     serialize([symbol1, symbol2, Symbol.for("superserial"), [symbol2]]),
-    '[[[[0,1],[0,2],[0,3],[0,4]]],["Symbol"],["Symbol"],["Symbol","superserial"],[[[0,2]]]]',
+    '[[[["Symbol"],[0,1],["Symbol","superserial"],[[[0,1]]]]],["Symbol"]]',
   );
 });
 
@@ -215,7 +215,7 @@ Deno.test("serialize Map", () => {
         [{}, "object"],
       ]),
     ),
-    '[["Map",[0,1],[0,2],[0,3],[0,4]],[["string","this is string"]],[[true,"boolean"]],[[null,"null"]],[[[0,5],"object"]],{}]',
+    '[["Map",[["string","this is string"]],[[true,"boolean"]],[[null,"null"]],[[{},"object"]]]]',
   );
 });
 
@@ -233,7 +233,7 @@ Deno.test("serialize Map deep", () => {
         ] as const,
       ]),
     ),
-    '[["Map",[0,1],[0,2]],[["key1",[0,3]]],[[[0,4],"val2"]],["Map",[0,5],[0,6]],["Map",[0,7],[0,8]],[["key1_1","value1_1"]],[["key1_2","value1_2"]],[["key2_1","value2_1"]],[["key2_2","value2_2"]]]',
+    '[["Map",[["key1",["Map",[["key1_1","value1_1"]],[["key1_2","value1_2"]]]]],[[["Map",[["key2_1","value2_1"]],[["key2_2","value2_2"]]],"val2"]]]]',
   );
 });
 
@@ -244,7 +244,7 @@ Deno.test("serialize Map circular", () => {
 
     assertEquals(
       serialize(value),
-      '[["Map",[0,1]],[[[0,0],[0,0]]]]',
+      '[["Map",[[[0,0],[0,0]]]]]',
     );
   }
   {
@@ -254,7 +254,7 @@ Deno.test("serialize Map circular", () => {
 
     assertEquals(
       serialize(value),
-      '[["Map",[0,1],[0,2]],[[[0,0],"val"]],[["key",[0,0]]]]',
+      '[["Map",[[[0,0],"val"]],[["key",[0,0]]]]]',
     );
   }
 });

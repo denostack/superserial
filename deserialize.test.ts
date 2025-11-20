@@ -66,10 +66,18 @@ Deno.test("deserialize values(primitive, constants, bigint)", () => {
 
 Deno.test("deserialize array", () => {
   assertEquals(deserialize(serialize([])), []);
-  assertEquals(
-    deserialize(serialize([[[{}, 2, "", false, []], [[]]], [1, 2], [1]])),
-    [[[{}, 2, "", false, []], [[]]], [1, 2], [1]],
-  );
+
+  for (
+    const serialized of [
+      '[[[[[[[{},2,"",false,[[]]]],[[[[]]]]]],[[1,2]],[[1]]]]]',
+      '[[[[0,1],[0,2],[0,3]]],[[[0,4],[0,5]]],[[1,2]],[[1]],[[[0,6],2,"",false,[0,7]]],[[[0,8]]],{},[[]],[[]]]',
+    ]
+  ) {
+    assertEquals(
+      deserialize(serialized),
+      [[[{}, 2, "", false, []], [[]]], [1, 2], [1]],
+    );
+  }
 });
 
 Deno.test("deserialize array self circular", () => {
@@ -78,16 +86,14 @@ Deno.test("deserialize array self circular", () => {
 });
 
 Deno.test("deserialize array circular", () => {
-  const value = deserialize<unknown[]>(
-    "[[[[0,1]]],[[[0,0]]]]",
-  );
-  const otherValue = value[0] as unknown[];
+  for (const serialized of ["[[[[[[0,0]]]]]]", "[[[[0,1]]],[[[0,0]]]]"]) {
+    const value = deserialize<unknown[][]>(serialized);
 
-  assertEquals(value.length, 1);
-  assertEquals(otherValue.length, 1);
-
-  assertStrictEquals(value[0], otherValue);
-  assertStrictEquals(otherValue[0], value);
+    assertEquals(value.length, 1);
+    assertNotStrictEquals(value, value[0]);
+    assertEquals(value[0].length, 1);
+    assertStrictEquals(value[0][0], value);
+  }
 });
 
 Deno.test("deserialize object", () => {
@@ -100,8 +106,13 @@ Deno.test("deserialize object", () => {
     assert("und" in obj);
     assertEquals(obj, { foo: "foo string", und: undefined });
   }
-  {
-    const obj = deserialize(serialize({ foo: { bar: "bar string" } }));
+  for (
+    const serialized of [
+      '[{"foo":[0,1]},{"bar":"bar string"}]',
+      '[{"foo":{"bar":"bar string"}}]',
+    ]
+  ) {
+    const obj = deserialize(serialized);
     assertEquals(obj, { foo: { bar: "bar string" } });
   }
 });
@@ -129,28 +140,38 @@ Deno.test("deserialize object circular", () => {
 });
 
 Deno.test("deserialize object with array", () => {
-  assertEquals(
-    deserialize(serialize([{ name: "wan2land" }, { name: "wan3land" }])),
-    [{ name: "wan2land" }, { name: "wan3land" }],
-  );
-
-  assertEquals(
-    deserialize(
-      serialize(
-        { users: [{ name: "wan2land" }, { name: "wan3land" }] },
-      ),
-    ),
-    { users: [{ name: "wan2land" }, { name: "wan3land" }] },
-  );
+  for (
+    const serialized of [
+      '[[[[0,1],[0,2]]],{"name":"wan2land"},{"name":"wan3land"}]',
+      '[[[{"name":"wan2land"},{"name":"wan3land"}]]]',
+    ]
+  ) {
+    const array = deserialize(serialized);
+    assertEquals(array, [{ name: "wan2land" }, { name: "wan3land" }]);
+  }
+  for (
+    const serialized of [
+      '[{"users":[0,1]},[[[0,2],[0,3]]],{"name":"wan2land"},{"name":"wan3land"}]',
+      '[{"users":[[{"name":"wan2land"},{"name":"wan3land"}]]}]',
+    ]
+  ) {
+    const obj = deserialize(serialized);
+    assertEquals(obj, { users: [{ name: "wan2land" }, { name: "wan3land" }] });
+  }
 });
 
 Deno.test("deserialize named object without reviver", () => {
-  const value = deserialize<object>(
-    '[["U",[0,1]],{"name":"wan2land","age":20}]',
-  );
+  for (
+    const serialized of [
+      '[["U",[0,1]],{"name":"wan2land","age":20}]',
+      '[["U",{"name":"wan2land","age":20}]]',
+    ]
+  ) {
+    const value = deserialize<object>(serialized);
 
-  assertStrictEquals(value.constructor, Object);
-  assertEquals(value, { "name": "wan2land", "age": 20 });
+    assertStrictEquals(value.constructor, Object);
+    assertEquals(value, { "name": "wan2land", "age": 20 });
+  }
 });
 
 Deno.test("deserialize named object with empty reviver", () => {
@@ -164,18 +185,25 @@ Deno.test("deserialize named object with empty reviver", () => {
 });
 
 Deno.test("deserialize named object with reviver", () => {
-  const value = deserialize<User>(
-    '[["U",[0,1]],{"name":"wan2land","age":20}]',
-    new Map([
-      ["U", (value: { name: string; age: number }) => {
-        return new User(value.name, value.age);
-      }],
-    ]),
-  );
-  assertInstanceOf(value, User);
+  for (
+    const serialized of [
+      '[["U",[0,1]],{"name":"wan2land","age":20}]',
+      '[["U",{"name":"wan2land","age":20}]]',
+    ]
+  ) {
+    const value = deserialize<User>(
+      serialized,
+      new Map([
+        ["U", (value: { name: string; age: number }) => {
+          return new User(value.name, value.age);
+        }],
+      ]),
+    );
+    assertInstanceOf(value, User);
 
-  assertEquals(value.name, "wan2land");
-  assertEquals(value.getAge(), 20);
+    assertEquals(value.name, "wan2land");
+    assertEquals(value.getAge(), 20);
+  }
 });
 
 Deno.test("deserialize symbol", () => {
@@ -188,12 +216,13 @@ Deno.test("deserialize symbol", () => {
     const symbol = deserialize<symbol>('[["Symbol","superserial"]]');
     assertStrictEquals(symbol, Symbol.for("superserial"));
   }
-  {
-    const symbol1 = Symbol("sym1");
-    const symbol2 = Symbol("sym2");
-    const value = deserialize<[symbol, symbol, symbol, [symbol]]>(
-      serialize([symbol1, symbol2, Symbol.for("superserial"), [symbol2]]),
-    );
+  for (
+    const serialized of [
+      '[[[[0,1],[0,2],[0,3],[0,4]]],["Symbol"],["Symbol"],["Symbol","superserial"],[[[0,2]]]]',
+      '[[[["Symbol"],[0,1],["Symbol","superserial"],[[[0,1]]]]],["Symbol"]]',
+    ]
+  ) {
+    const value = deserialize<[symbol, symbol, symbol, [symbol]]>(serialized);
     assertNotStrictEquals(value[0], value[1]);
     assertNotStrictEquals(value[0], value[2]);
     assertStrictEquals(value[1], value[3][0]);
@@ -224,44 +253,55 @@ Deno.test("deserialize Set circular", () => {
 });
 
 Deno.test("deserialize Map", () => {
-  function createMap() {
-    return new Map<unknown, unknown>([
-      ["string", "this is string"],
-      [true, "boolean"],
-      [null, "null"],
-      [{}, "object"],
-    ]);
+  for (
+    const serialized of [
+      '[["Map",[0,1],[0,2],[0,3],[0,4]],[["string","this is string"]],[[true,"boolean"]],[[null,"null"]],[[[0,5],"object"]],{}]',
+      '[["Map",[["string","this is string"]],[[true,"boolean"]],[[null,"null"]],[[{},"object"]]]]',
+    ]
+  ) {
+    assertEquals(
+      deserialize(serialized),
+      new Map<unknown, unknown>([
+        ["string", "this is string"],
+        [true, "boolean"],
+        [null, "null"],
+        [{}, "object"],
+      ]),
+    );
   }
-
-  assertEquals(deserialize(serialize(createMap())), createMap());
 });
 
 Deno.test("deserialize Map deep", () => {
-  function createMap() {
-    return new Map<unknown, unknown>([
-      [
-        "key1",
-        new Map([["key1_1", "value1_1"], ["key1_2", "value1_2"]]),
-      ] as const,
-      [
-        new Map([["key2_1", "value2_1"], ["key2_2", "value2_2"]]),
-        "val2",
-      ] as const,
-    ]);
+  for (
+    const serialized of [
+      '[["Map",[0,1],[0,2]],[["key1",[0,3]]],[[[0,4],"val2"]],["Map",[0,5],[0,6]],["Map",[0,7],[0,8]],[["key1_1","value1_1"]],[["key1_2","value1_2"]],[["key2_1","value2_1"]],[["key2_2","value2_2"]]]',
+      '[["Map",[["key1",["Map",[["key1_1","value1_1"]],[["key1_2","value1_2"]]]]],[[["Map",[["key2_1","value2_1"]],[["key2_2","value2_2"]]],"val2"]]]]',
+    ]
+  ) {
+    assertEquals(
+      deserialize(serialized),
+      new Map<unknown, unknown>([
+        [
+          "key1",
+          new Map([["key1_1", "value1_1"], ["key1_2", "value1_2"]]),
+        ] as const,
+        [
+          new Map([["key2_1", "value2_1"], ["key2_2", "value2_2"]]),
+          "val2",
+        ] as const,
+      ]),
+    );
   }
-
-  assertEquals(deserialize(serialize(createMap())), createMap());
 });
 
 Deno.test("deserialize Map circular", () => {
-  {
-    const createMap = () => {
-      const value = new Map<unknown, unknown>();
-      value.set(value, value);
-      return value;
-    };
-
-    const map = deserialize(serialize(createMap())) as Map<
+  for (
+    const serialized of [
+      '[["Map",[0,1]],[[[0,0],[0,0]]]]',
+      '[["Map",[[[0,0],[0,0]]]]]',
+    ]
+  ) {
+    const map = deserialize(serialized) as Map<
       unknown,
       unknown
     >;
@@ -270,14 +310,13 @@ Deno.test("deserialize Map circular", () => {
     assertStrictEquals(keys[0], map);
     assertStrictEquals(map.get(map), map);
   }
-  {
-    const createMap = () => {
-      const value = new Map<unknown, unknown>();
-      value.set(value, "val");
-      value.set("key", value);
-      return value;
-    };
-    const map2 = deserialize(serialize(createMap())) as Map<
+  for (
+    const serialized of [
+      '[["Map",[0,1],[0,2]],[[[0,0],"val"]],[["key",[0,0]]]]',
+      '[["Map",[[[0,0],"val"]],[["key",[0,0]]]]]',
+    ]
+  ) {
+    const map2 = deserialize(serialized) as Map<
       unknown,
       unknown
     >;

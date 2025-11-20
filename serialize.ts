@@ -4,9 +4,9 @@ import type { ConstructType } from "./types.ts";
 
 const stringify = JSON.stringify;
 
-export type Reducer<T> = [name: string, serialize?: (value: T) => unknown[]];
+export type Reducer<T> = [name: string, reduceHandle?: (value: T) => unknown[]];
 
-export const builtInReducers = new Map<ConstructType<unknown>, Reducer<any>>(
+const builtInReducers = new Map<ConstructType<unknown>, Reducer<any>>(
   [
     [Date, ["Date", (value: Date) => [value.getTime()]]],
     [RegExp, [
@@ -23,96 +23,161 @@ export function serialize(
   input: unknown,
   reducers = new Map<ConstructType<unknown>, Reducer<any>>(),
 ): string {
-  const roots = [input] as unknown[];
+  const counters = new Map<unknown, number>();
+  const reduced = new Map<unknown, [name: string, args: unknown[]]>();
+
+  const refs = [input] as unknown[];
   const indexes = new Map<unknown, number>([[input, 0]]);
 
-  function stringifyRoot(value: unknown) {
-    const type = typeof value;
-    if (
-      type === "object" &&
-      value &&
-      value.constructor &&
-      value.constructor !== Object &&
-      value.constructor !== Function
-    ) {
-      const reducer = reducers.get(value.constructor) ??
-        builtInReducers.get(value.constructor);
-      if (reducer) {
-        const args = reducer[1]?.(value) ?? [];
-        const suffix = args.length > 0
-          ? `,${args.map(stringifyRef).join(",")}`
-          : "";
-        return `[${stringify(reducer[0])}${suffix}]`;
+  let result = "";
+
+  traverseCount(input);
+
+  result += "[";
+  traverseValue(refs[0], true);
+  for (let i = 1; i < refs.length; i++) {
+    result += ",";
+    traverseValue(refs[i], true);
+  }
+  result += "]";
+  return result;
+
+  function traverseCount(value: unknown): void {
+    switch (value) {
+      case undefined:
+      case null:
+      case true:
+      case false:
+        return;
+    }
+    const typeValue = typeof value;
+    switch (typeValue) {
+      case "number":
+      case "bigint":
+      case "string": {
+        return;
       }
     }
-    return stringifyAny(value);
-  }
-
-  function stringifyAny(value: unknown) {
-    const stringified = stringifyPrimitive(value);
-    if (stringified) {
-      return stringified;
+    const counter = (counters.get(value) ?? 0) + 1;
+    counters.set(value, counter);
+    if (counter > 1) {
+      return;
     }
-    if (typeof value === "symbol") {
-      return Symbol.keyFor(value)
-        ? `["Symbol",${stringify(value.description)}]`
-        : '["Symbol"]';
+    switch (typeValue) {
+      case "symbol":
+        return;
     }
     if (Array.isArray(value)) {
-      return `[[${value.map(stringifyRef).join(",")}]]`;
+      value.forEach(traverseCount);
+      return;
     }
-    return `{${
-      Object.entries(value as object)
-        .map(([k, v]) => `${stringify(k)}:${stringifyRef(v)}`)
-        .join(",")
-    }}`;
+    const ctor = (value as any).constructor;
+    const reducer = reducers.get(ctor) ?? builtInReducers.get(ctor);
+    if (reducer) {
+      const name = reducer[0];
+      const args = reducer[1]?.(value) ?? [];
+      reduced.set(value, [name, args]);
+      args.forEach(traverseCount);
+      return;
+    }
+    Object.values(value as object).forEach(traverseCount);
   }
 
-  function stringifyRef(value: unknown) {
-    const stringified = stringifyPrimitive(value);
-    if (stringified) {
-      return stringified;
+  function traverseValue(value: unknown, root?: boolean): void {
+    switch (value) {
+      case undefined: {
+        result += "[1]";
+        return;
+      }
+      case null:
+      case true:
+      case false: {
+        result += value;
+        return;
+      }
+    }
+    const typeValue = typeof value;
+    switch (typeValue) {
+      case "number": {
+        if (Number.isNaN(value)) {
+          result += "[2]";
+          return;
+        }
+        if (!Number.isFinite(value)) {
+          result += (value as number) > 0 ? "[3]" : "[4]";
+          return;
+        }
+        if (value === 0 && 1 / value < 0) {
+          result += "[5]";
+          return;
+        }
+        result += value;
+        return;
+      }
+      case "bigint": {
+        result += `["BigInt","${value}"]`;
+        return;
+      }
+      case "string": {
+        result += stringify(value);
+        return;
+      }
+    }
+    const counter = counters.get(value) ?? 0;
+    if (counter === 0) {
+      throw new Error("??");
+    }
+    if (counter === 1 || root) {
+      switch (typeValue) {
+        case "symbol": {
+          result += Symbol.keyFor(value as symbol)
+            ? `["Symbol",${stringify((value as symbol).description)}]`
+            : '["Symbol"]';
+          return;
+        }
+      }
+      if (Array.isArray(value)) {
+        result += "[[";
+        const arrayLength = value.length;
+        if (arrayLength > 0) {
+          traverseValue(value[0]);
+          for (const v of value.slice(1)) {
+            result += ",";
+            traverseValue(v);
+          }
+        }
+        result += "]]";
+        return;
+      }
+      const reducer = reduced.get(value);
+      if (reducer) {
+        result += `[${stringify(reducer[0])}`;
+        for (const arg of reducer[1]) {
+          result += ",";
+          traverseValue(arg);
+        }
+        result += "]";
+        return;
+      }
+      result += "{";
+      const objectEntries = Object.entries(value as object);
+      const objectLength = objectEntries.length;
+      if (objectLength > 0) {
+        result += `${stringify(objectEntries[0][0])}:`;
+        traverseValue(objectEntries[0][1]);
+        for (const [k, v] of objectEntries.slice(1)) {
+          result += `,${stringify(k)}:`;
+          traverseValue(v);
+        }
+      }
+      result += "}";
+      return;
     }
     let idx = indexes.get(value);
     if (typeof idx !== "number") {
-      indexes.set(value, idx = roots.length);
-      roots.push(value);
+      indexes.set(value, idx = refs.length);
+      refs.push(value);
     }
-    return `[0,${idx}]`;
-  }
-  return `[${
-    Array.from(roots[Symbol.iterator]().map(stringifyRoot)).join(",")
-  }]`;
-}
-
-function stringifyPrimitive(value: unknown): string | undefined {
-  if (value === null) {
-    return "null";
-  }
-  switch (typeof value) {
-    case "undefined": {
-      return "[1]";
-    }
-    case "number": {
-      if (Number.isNaN(value)) {
-        return "[2]";
-      }
-      if (!Number.isFinite(value)) {
-        return value > 0 ? "[3]" : "[4]";
-      }
-      if (value === 0 && 1 / value < 0) {
-        return "[5]";
-      }
-      return `${value}`;
-    }
-    case "bigint": {
-      return `["BigInt","${value}"]`;
-    }
-    case "boolean": {
-      return value ? "true" : "false";
-    }
-    case "string": {
-      return stringify(value);
-    }
+    result += `[0,${idx}]`;
   }
 }

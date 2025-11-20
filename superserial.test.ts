@@ -65,7 +65,7 @@ Deno.test("superserial, default serialize/deserialize with default class definit
   superserial2.defineClasses({ TestArticle });
 
   const serialized =
-    '[["TestArticle",[0,1]],{"title":"hello world","content":"yes!"}]';
+    '[["TestArticle",{"title":"hello world","content":"yes!"}]]';
 
   for (const superserial of [superserial1, superserial2]) {
     {
@@ -88,7 +88,7 @@ Deno.test("superserial, serialize/deserialize with toSerialize, toDeserialize", 
   const superserial2 = new Superserial();
   superserial2.defineClasses({ TestUser });
 
-  const serialized = '[["TestUser",[0,1]],{"name":"Alice","age":20}]';
+  const serialized = '[["TestUser",{"name":"Alice","age":20}]]';
 
   for (const superserial of [superserial1, superserial2]) {
     {
@@ -112,7 +112,7 @@ Deno.test("superserial, alias class name", () => {
   const superserial2 = new Superserial();
   superserial2.defineClasses({ AliasedUser: TestUser });
 
-  const serialized = '[["AliasedUser",[0,1]],{"name":"Bob","age":20}]';
+  const serialized = '[["AliasedUser",{"name":"Bob","age":20}]]';
 
   for (const superserial of [superserial1, superserial2]) {
     {
@@ -178,9 +178,9 @@ Deno.test("superserial, define class definitions outside", () => {
     const [index, superserial] of [superserial1, superserial2, superserial3]
       .entries()
   ) {
-    const serialized = `[["AliasedArticle",[0,1]],[["Hello World!","Wow!",${
+    const serialized = `[["AliasedArticle",[["Hello World!","Wow!",${
       index + 1
-    }]]]`;
+    }]]]]`;
 
     {
       const article = new TestArticle("Hello World!", "Wow!");
