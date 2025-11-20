@@ -20,14 +20,12 @@
  */
 
 export type { ConstructType } from "./types.ts";
+export { toDeserialize, toSerialize } from "./constants.ts";
+
+export { type Reducer, serialize } from "./serialize.ts";
+export { deserialize, type Reviver } from "./deserialize.ts";
+
+import { Serializer } from "./serializer.ts";
 
 export { Serializer, type SerializerOptions } from "./serializer.ts";
-
-export { serialize, type SerializeOptions } from "./serialize.ts";
-export {
-  type ClassLoadHandler,
-  deserialize,
-  type DeserializeOptions,
-} from "./deserialize.ts";
-
-export { toDeserialize, toSerialize } from "./symbol.ts";
+export default Serializer;

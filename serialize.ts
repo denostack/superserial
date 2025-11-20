@@ -1,238 +1,118 @@
-import { toSerialize } from "./symbol.ts";
+// deno-lint-ignore-file no-explicit-any
+
 import type { ConstructType } from "./types.ts";
 
-export interface SerializeOptions {
-  classNames?: Map<ConstructType<unknown>, string>;
-  prettify?: boolean;
-}
+const stringify = JSON.stringify;
+
+export type Reducer<T> = [name: string, serialize?: (value: T) => unknown[]];
+
+export const builtInReducers = new Map<ConstructType<unknown>, Reducer<any>>(
+  [
+    [Date, ["Date", (value: Date) => [value.getTime()]]],
+    [RegExp, [
+      "RegExp",
+      (value: RegExp) =>
+        value.flags ? [value.source, value.flags] : [value.source],
+    ]],
+    [Set, ["Set", (value: Set<unknown>) => [...value]]],
+    [Map, ["Map", (value: Map<unknown, unknown>) => [...value.entries()]]],
+  ],
+);
 
 export function serialize(
-  value: unknown,
-  { prettify, classNames }: SerializeOptions = {},
+  input: unknown,
+  reducers = new Map<ConstructType<unknown>, Reducer<any>>(),
 ): string {
-  let output = "";
-  let depth = 0;
+  const roots = [input] as unknown[];
+  const indexes = new Map<unknown, number>([[input, 0]]);
 
-  const roots = [] as unknown[];
-  const rootIndexMap = new Map<unknown, number>();
-
-  function _stringifyString(value: string) {
-    output += JSON.stringify(value); // fastest way
+  function stringifyRoot(value: unknown) {
+    const type = typeof value;
+    if (
+      type === "object" &&
+      value &&
+      value.constructor &&
+      value.constructor !== Object &&
+      value.constructor !== Function
+    ) {
+      const reducer = reducers.get(value.constructor) ??
+        builtInReducers.get(value.constructor);
+      if (reducer) {
+        const args = reducer[1]?.(value) ?? [];
+        const suffix = args.length > 0
+          ? `,${args.map(stringifyRef).join(",")}`
+          : "";
+        return `[${stringify(reducer[0])}${suffix}]`;
+      }
+    }
+    return stringifyAny(value);
   }
 
-  function _stringifyScalar(
-    value: unknown,
-  ): value is object | symbol {
-    if (value === null) {
-      output += "null";
-      return false;
+  function stringifyAny(value: unknown) {
+    const stringified = stringifyPrimitive(value);
+    if (stringified) {
+      return stringified;
     }
-    switch (typeof value) {
-      case "undefined": {
-        output += "undefined";
-        return false;
-      }
-      case "number": {
-        if (Number.isNaN(value)) {
-          output += "NaN";
-          return false;
-        }
-        if (!Number.isFinite(value)) {
-          output += value > 0 ? "Infinity" : "-Infinity";
-          return false;
-        }
-        output += `${value}`;
-        return false;
-      }
-      case "bigint": {
-        output += `${value}n`;
-        return false;
-      }
-      case "boolean": {
-        output += value ? "true" : "false";
-        return false;
-      }
-      case "string": {
-        _stringifyString(value);
-        return false;
-      }
+    if (typeof value === "symbol") {
+      return Symbol.keyFor(value)
+        ? `["Symbol",${stringify(value.description)}]`
+        : '["Symbol"]';
     }
-
-    return true;
+    if (Array.isArray(value)) {
+      return `[[${value.map(stringifyRef).join(",")}]]`;
+    }
+    return `{${
+      Object.entries(value as object)
+        .map(([k, v]) => `${stringify(k)}:${stringifyRef(v)}`)
+        .join(",")
+    }}`;
   }
 
-  function _stringifyRoot(value: unknown) {
-    if (_stringifyScalar(value)) {
-      // simple :-)
-      if (typeof value === "symbol") {
-        output += "Symbol(";
-        if (value.description) {
-          _stringifyString(value.description);
-        }
-        output += ")";
-        return;
-      }
+  function stringifyRef(value: unknown) {
+    const stringified = stringifyPrimitive(value);
+    if (stringified) {
+      return stringified;
+    }
+    let idx = indexes.get(value);
+    if (typeof idx !== "number") {
+      indexes.set(value, idx = roots.length);
+      roots.push(value);
+    }
+    return `[0,${idx}]`;
+  }
+  return `[${
+    Array.from(roots[Symbol.iterator]().map(stringifyRoot)).join(",")
+  }]`;
+}
 
-      if (value instanceof RegExp) {
-        output += value.toString();
-        return;
+function stringifyPrimitive(value: unknown): string | undefined {
+  if (value === null) {
+    return "null";
+  }
+  switch (typeof value) {
+    case "undefined": {
+      return "[1]";
+    }
+    case "number": {
+      if (Number.isNaN(value)) {
+        return "[2]";
       }
-
-      if (value instanceof Date) {
-        output += "Date(";
-        output += value.getTime().toString();
-        output += ")";
-        return;
+      if (!Number.isFinite(value)) {
+        return value > 0 ? "[3]" : "[4]";
       }
-
-      // complex :D
-      if (prettify) {
-        output += "  ".repeat(depth);
+      if (value === 0 && 1 / value < 0) {
+        return "[5]";
       }
-
-      if (Array.isArray(value)) {
-        _stringifyListStart("[");
-        _stringifyList(value);
-        _stringifyListEnd("]");
-        return;
-      }
-
-      if (value instanceof Map) {
-        _stringifyListStart("Map(");
-        _stringifyMap([...value.entries()]);
-        _stringifyListEnd(")");
-        return;
-      }
-      if (value instanceof Set) {
-        _stringifyListStart("Set(");
-        _stringifyList([...value]);
-        _stringifyListEnd(")");
-        return;
-      }
-
-      const name = value.constructor && value.constructor !== Object &&
-          value.constructor !== Function
-        ? (classNames?.get(value.constructor) ?? value.constructor.name)
-        : "";
-
-      _stringifyListStart(prettify && name ? `${name} {` : `${name}{`);
-      _stringifyKv(
-        Object.entries(
-          toSerialize in value && typeof value[toSerialize] === "function"
-            ? value[toSerialize]()
-            : value,
-        ),
-      );
-      _stringifyListEnd("}");
-      return;
+      return `${value}`;
+    }
+    case "bigint": {
+      return `["BigInt","${value}"]`;
+    }
+    case "boolean": {
+      return value ? "true" : "false";
+    }
+    case "string": {
+      return stringify(value);
     }
   }
-
-  function _stringifyUnknown(value: unknown) {
-    if (_stringifyScalar(value)) {
-      let idx = rootIndexMap.get(value);
-      if (typeof idx !== "number") {
-        rootIndexMap.set(value, idx = roots.length);
-        roots.push(value);
-      }
-      output += `$${idx}`;
-    }
-  }
-
-  const _stringifyListStart = prettify
-    ? (name: string) => {
-      output += name;
-      output += "\n";
-      depth++;
-    }
-    : (name: string) => {
-      output += name;
-      depth++;
-    };
-
-  const _stringifyListEnd = prettify
-    ? (name: string) => {
-      depth--;
-      output += "\n";
-      output += "  ".repeat(depth);
-      output += name;
-    }
-    : (name: string) => {
-      depth--;
-      output += name;
-    };
-
-  const _stringifyList = prettify
-    ? (value: unknown[]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",\n";
-        }
-        output += "  ".repeat(depth);
-        _stringifyUnknown(value[i]);
-      }
-    }
-    : (value: unknown[]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",";
-        }
-        _stringifyUnknown(value[i]);
-      }
-    };
-  const _stringifyMap = prettify
-    ? (value: [string, unknown][]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",\n";
-        }
-        output += "  ".repeat(depth);
-        _stringifyUnknown(value[i][0]);
-        output += " => ";
-        _stringifyUnknown(value[i][1]);
-      }
-    }
-    : (value: [string, unknown][]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",";
-        }
-        _stringifyUnknown(value[i][0]);
-        output += "=>";
-        _stringifyUnknown(value[i][1]);
-      }
-    };
-  const _stringifyKv = prettify
-    ? (value: [string, unknown][]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",\n";
-        }
-        output += "  ".repeat(depth);
-        _stringifyString(value[i][0]);
-        output += ": ";
-        _stringifyUnknown(value[i][1]);
-      }
-    }
-    : (value: [string, unknown][]) => {
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0) {
-          output += ",";
-        }
-        _stringifyString(value[i][0]);
-        output += ":";
-        _stringifyUnknown(value[i][1]);
-      }
-    };
-
-  rootIndexMap.set(value, 0);
-  roots.push(value);
-
-  _stringifyRoot(value);
-  const splitter = prettify ? ";\n" : ";";
-  for (let i = 1; i < roots.length; i++) {
-    output += splitter;
-    _stringifyRoot(roots[i]);
-  }
-  return output;
 }
