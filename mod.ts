@@ -25,7 +25,12 @@ export { toDeserialize, toSerialize } from "./constants.ts";
 export { type Reducer, serialize } from "./serialize.ts";
 export { deserialize, type Reviver } from "./deserialize.ts";
 
-import { Serializer } from "./serializer.ts";
+import { Superserial } from "./superserial.ts";
+export {
+  type ClassDefinition,
+  type DefineClassOptions,
+  Superserial,
+  type SuperserialOptions,
+} from "./superserial.ts";
 
-export { Serializer, type SerializerOptions } from "./serializer.ts";
-export default Serializer;
+export default Superserial;
