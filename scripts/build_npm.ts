@@ -1,10 +1,8 @@
 import { build, emptyDir } from "@deno/dnt";
 import { bgGreen } from "@std/fmt/colors";
+import denoJson from "../deno.json" with { type: "json" };
 
-const denoInfo = JSON.parse(
-  Deno.readTextFileSync(new URL("../deno.json", import.meta.url)),
-);
-const version = denoInfo.version;
+const version = denoJson.version;
 
 console.log(bgGreen(`version: ${version}`));
 
@@ -42,7 +40,8 @@ await build({
       url: "https://github.com/denostack/superserial/issues",
     },
   },
+  postBuild() {
+    Deno.copyFileSync("LICENSE", ".npm/LICENSE");
+    Deno.copyFileSync("README.md", ".npm/README.md");
+  },
 });
-
-// post build steps
-Deno.copyFileSync("README.md", ".npm/README.md");
