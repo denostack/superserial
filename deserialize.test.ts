@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-explicit-any
+
 import {
   assert,
   assertEquals,
@@ -7,6 +9,7 @@ import {
 } from "@std/assert";
 import { deserialize } from "./deserialize.ts";
 import { serialize } from "./serialize.ts";
+import { complex } from "./.benchmark/variables.ts";
 
 class User {
   name: string;
@@ -342,4 +345,54 @@ Deno.test("deserialize RegExp", () => {
   const re2 = deserialize<RegExp>(serialize(/abc/gmi));
   assertEquals(re2.source, "abc");
   assertEquals(re2.flags, "gim");
+});
+
+Deno.test("deserialize complex", () => {
+  const checkedObject = new Map<any, any>();
+  function assertDeepEqual(a: unknown, b: unknown) {
+    if (a === null) {
+      assertStrictEquals(a, b);
+      return;
+    }
+    switch (typeof a) {
+      case "symbol": {
+        return;
+      }
+      case "undefined":
+      case "boolean":
+      case "number":
+      case "string":
+      case "bigint": {
+        assertStrictEquals(a, b);
+        return;
+      }
+      case "object": {
+        if (checkedObject.has(a)) {
+          assertStrictEquals(checkedObject.get(a), b);
+          return;
+        }
+        checkedObject.set(a, b);
+        if (Array.isArray(a)) {
+          assert(Array.isArray(b));
+          assertEquals(a.length, b.length);
+          for (let i = 0; i < a.length; i++) {
+            assertDeepEqual(a[i], b[i]);
+          }
+          return;
+        }
+        assert(b !== null && typeof b === "object" && !Array.isArray(b));
+        assertEquals(a.constructor, b.constructor);
+        const entries = Object.entries(a);
+        assertEquals(entries.length, Object.entries(b).length);
+        for (const [key, value] of entries) {
+          assertDeepEqual(value, (b as any)[key]);
+        }
+        return;
+      }
+      default:
+        throw new Error("Unsupported type");
+    }
+  }
+
+  assertDeepEqual(complex, deserialize(serialize(complex)));
 });

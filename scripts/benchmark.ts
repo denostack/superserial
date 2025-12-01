@@ -9,7 +9,10 @@ const cmd = new Deno.Command("deno", {
 const commandOutput = await cmd.spawn().output();
 
 const decoder = new TextDecoder();
-const output = decoder.decode(commandOutput.stdout);
+const output = decoder.decode(commandOutput.stdout)
+  .split("\n")
+  .filter((line) => !line.includes("file:///Users"))
+  .join("\n");
 
 const svg: string = ansiToSvg(output, {
   paddingTop: 4,

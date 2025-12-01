@@ -2,19 +2,19 @@
   "name": "@denostack/superserial",
   "version": "0.3.5",
   "tasks": {
-    "bench": "deno run --allow-run=deno --allow-write=.benchmark scripts/benchmark.ts",
     "test": "deno task test:unit && deno task test:lint && deno task test:format && deno task test:types",
     "test:format": "deno fmt --check",
     "test:lint": "deno lint",
     "test:unit": "deno test -A",
-    "test:types": "deno check mod.ts",
-    "build:npm": "deno run --allow-sys --allow-env --allow-read --allow-write --allow-net --allow-run scripts/build_npm.ts"
+    "test:types": "find . -name '*.ts' -not -path './.npm/*' | xargs deno check",
+    "bench": "deno run --allow-run --allow-write=.benchmark scripts/benchmark.ts",
+    "build:npm": "deno run --allow-env --allow-read --allow-write --allow-run scripts/build_npm.ts"
   },
   "imports": {
-    "@deno/dnt": "jsr:@deno/dnt@^0.41.1",
-    "@std/assert": "jsr:@std/assert@^0.222.1",
-    "@std/fmt": "jsr:@std/fmt@^0.222.1",
-    "@std/testing": "jsr:@std/testing@^0.222.1",
+    "@deno/dnt": "jsr:@deno/dnt@^0.42.3",
+    "@std/assert": "jsr:@std/assert@^1.0.15",
+    "@std/fmt": "jsr:@std/fmt@^1.0.8",
+    "@std/testing": "jsr:@std/testing@^1.0.16",
     "ansi-to-svg": "npm:ansi-to-svg@1.4.3"
   },
   "exports": {
@@ -28,6 +28,5 @@
   },
   "fmt": {
     "exclude": [".npm"]
-  },
-  "lock": false
+  }
 }
