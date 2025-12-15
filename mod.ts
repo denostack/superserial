@@ -19,18 +19,14 @@
  * @module
  */
 
-export type { ConstructType } from "./types.ts";
+export type { ClassDecorator, ConstructType } from "./types.ts";
 export { toDeserialize, toSerialize } from "./constants.ts";
 
 export { type Reducer, serialize } from "./serialize.ts";
 export { deserialize, type Reviver } from "./deserialize.ts";
 
 import { Superserial } from "./superserial.ts";
-export {
-  type ClassDefinition,
-  type DefineClassOptions,
-  Superserial,
-  type SuperserialOptions,
-} from "./superserial.ts";
+export { type ClassDefinition, Superserial, type SuperserialOptions } from "./superserial.ts";
+export { Serializable, serializable, type SerializableOptions } from "./decorators/serializable.ts";
 
 export default Superserial;

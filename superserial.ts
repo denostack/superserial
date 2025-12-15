@@ -1,76 +1,68 @@
 // deno-lint-ignore-file no-explicit-any
 
 import { toDeserialize, toSerialize } from "./constants.ts";
+import { decoratorHooks, serializableClassMap } from "./decorators/serializable.ts";
 import { deserialize, type Reviver } from "./deserialize.ts";
 import { type Reducer, serialize } from "./serialize.ts";
 import type { ConstructType } from "./types.ts";
 
 export interface ClassDefinition<T, S> {
+  type: ConstructType<T>;
   toSerialize?: (value: T) => S;
   toDeserialize?: (value: S) => T;
 }
 
-export interface DefineClassOptions<T, S> extends ClassDefinition<T, S> {
-  name?: string;
-}
-
 export interface SuperserialOptions {
-  classes?: Record<
-    string,
-    ConstructType<any> | [
-      ConstructType<any>,
-      ClassDefinition<any, any>,
-    ]
-  >;
+  classes?: Record<string, ConstructType<any> | ClassDefinition<any, any>>;
+  decorator?: boolean;
 }
 
 export class Superserial {
   #revivers: Map<string, Reviver<any>> = new Map();
   #reducers: Map<ConstructType<unknown>, Reducer<any>> = new Map();
 
-  constructor({ classes }: SuperserialOptions = {}) {
+  constructor({ classes, decorator }: SuperserialOptions = {}) {
     this.defineClasses(classes ?? {});
+    if (decorator) {
+      this.defineClasses(Object.fromEntries(
+        [...serializableClassMap.entries()].map(([classType, options]) =>
+          [options.name ?? classType.name, {
+            type: classType,
+            toSerialize: options.toSerialize,
+            toDeserialize: options.toDeserialize,
+          }] as const
+        ),
+      ));
+      decoratorHooks.add((classType, options) => {
+        this.defineClass(options.name ?? classType.name, {
+          type: classType,
+          toSerialize: options.toSerialize,
+          toDeserialize: options.toDeserialize,
+        });
+      });
+    }
   }
 
   defineClasses(
-    classes: Record<
-      string,
-      ConstructType<any> | [
-        ConstructType<any>,
-        ClassDefinition<any, any>,
-      ]
-    >,
-  ) {
-    for (const [className, classValue] of Object.entries(classes)) {
-      let constructType: ConstructType<any>;
+    classes: Record<string, ConstructType<any> | ClassDefinition<any, any>>,
+  ): void {
+    for (const [className, classTypeOrOptions] of Object.entries(classes)) {
+      let classType: ConstructType<any>;
       let reducer: Reducer<any> | null = null;
       let reviver: Reviver<any> | null = null;
-      if (Array.isArray(classValue)) {
-        constructType = classValue[0];
-        const toSerializeFn = classValue[1].toSerialize;
-        const toDeserializeFn = classValue[1].toDeserialize;
-        if (toSerializeFn) {
-          reducer = [className, (value) => [toSerializeFn(value)]];
-        }
-        if (toDeserializeFn) {
-          reviver = (value: any) => toDeserializeFn(value);
-        }
+      if (typeof classTypeOrOptions === "function") {
+        classType = classTypeOrOptions;
+        reducer = getReducer(className, classType);
+        reviver = getReviver(classType);
       } else {
-        constructType = classValue;
-        if (toSerialize in classValue.prototype) {
-          reducer = [className, (value: any) => [value[toSerialize]()]];
-        } else {
-          reducer = [className, (value: any) => [{ ...value }]];
-        }
-        if (toDeserialize in classValue) {
-          reviver = (value: any) => (classValue as any)[toDeserialize](value);
-        } else {
-          reviver = (value: any) =>
-            Object.assign(new (classValue as any)(), value);
-        }
+        classType = classTypeOrOptions.type;
+        const toSerializeFn = classTypeOrOptions.toSerialize;
+        const toDeserializeFn = classTypeOrOptions.toDeserialize;
+        reducer = getReducer(className, classType, toSerializeFn);
+        reviver = getReviver(classType, toDeserializeFn);
       }
       if (reducer) {
-        this.#reducers.set(constructType, reducer);
+        this.#reducers.set(classType, reducer);
       }
       if (reviver) {
         this.#revivers.set(className, reviver);
@@ -78,16 +70,18 @@ export class Superserial {
     }
   }
 
+  defineClass<T, S>(classType: ConstructType<T>): void;
+  defineClass<T, S>(name: string, classType: ConstructType<T>): void;
+  defineClass<T, S>(name: string, options: ClassDefinition<T, S>): void;
   defineClass<T, S>(
-    constructType: ConstructType<T>,
-    classDefinition: DefineClassOptions<T, S>,
+    nameOrClassType: string | ConstructType<T>,
+    optionsOrClassType?: ClassDefinition<T, S> | ConstructType<T>,
   ) {
-    this.defineClasses({
-      [classDefinition.name ?? constructType.name]: [
-        constructType,
-        classDefinition,
-      ],
-    });
+    if (typeof nameOrClassType === "function") {
+      this.defineClasses({ [nameOrClassType.name]: nameOrClassType });
+    } else {
+      this.defineClasses({ [nameOrClassType]: optionsOrClassType! });
+    }
   }
 
   serialize(value: unknown): string {
@@ -97,4 +91,28 @@ export class Superserial {
   deserialize<T = unknown>(code: string): T {
     return deserialize<T>(code, this.#revivers);
   }
+}
+
+function getReducer(
+  className: string,
+  classType: ConstructType<any>,
+  toSerializeFn?: (value: any) => any,
+): Reducer<any> {
+  if (toSerializeFn) {
+    return [className, (value) => [toSerializeFn(value)]];
+  }
+  if (toSerialize in classType.prototype) {
+    return [className, (value: any) => [value[toSerialize]()]];
+  }
+  return [className, (value: any) => [{ ...value }]];
+}
+
+function getReviver(classType: ConstructType<any>, toDeserializeFn?: (value: any) => any): Reviver<any> {
+  if (toDeserializeFn) {
+    return (value: any) => toDeserializeFn(value);
+  }
+  if (toDeserialize in classType) {
+    return (value: any) => (classType as any)[toDeserialize](value);
+  }
+  return (value: any) => Object.assign(new (classType as any)(), value);
 }

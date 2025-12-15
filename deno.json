@@ -27,6 +27,16 @@
     "exclude": [".npm"]
   },
   "fmt": {
-    "exclude": [".npm"]
+    "exclude": [".npm"],
+    "lineWidth": 120
+  },
+  "publish": {
+    "exclude": [
+      ".github",
+      ".vscode",
+      "scripts",
+      "examples",
+      "**/*.test.ts"
+    ]
   }
 }

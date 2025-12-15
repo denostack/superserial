@@ -1,9 +1,6 @@
-import {
-  assertEquals,
-  assertInstanceOf,
-  assertNotInstanceOf,
-} from "@std/assert";
+import { assertEquals, assertInstanceOf, assertNotInstanceOf } from "@std/assert";
 import { Superserial, toDeserialize, toSerialize } from "./mod.ts";
+import { Serializable, serializable } from "./decorators/serializable.ts";
 
 class TestUser {
   #_age = 0;
@@ -37,6 +34,7 @@ class TestUser {
     return user;
   }
 }
+Serializable()(TestUser); // typescript decorator
 
 class TestArticle {
   constructor(public title: string, public content: string) {}
@@ -64,8 +62,7 @@ Deno.test("superserial, default serialize/deserialize with default class definit
   const superserial2 = new Superserial();
   superserial2.defineClasses({ TestArticle });
 
-  const serialized =
-    '[["TestArticle",{"title":"hello world","content":"yes!"}]]';
+  const serialized = '[["TestArticle",{"title":"hello world","content":"yes!"}]]';
 
   for (const superserial of [superserial1, superserial2]) {
     {
@@ -133,7 +130,8 @@ Deno.test("superserial, alias class name", () => {
 Deno.test("superserial, define class definitions outside", () => {
   const superserial1 = new Superserial({
     classes: {
-      AliasedArticle: [TestArticle, {
+      AliasedArticle: {
+        type: TestArticle,
         toSerialize(value: TestArticle) {
           return [value.title, value.content, 1];
         },
@@ -142,12 +140,13 @@ Deno.test("superserial, define class definitions outside", () => {
             index: value[2],
           });
         },
-      }],
+      },
     },
   });
   const superserial2 = new Superserial();
   superserial2.defineClasses({
-    AliasedArticle: [TestArticle, {
+    AliasedArticle: {
+      type: TestArticle,
       toSerialize(value: TestArticle) {
         return [value.title, value.content, 2];
       },
@@ -156,13 +155,13 @@ Deno.test("superserial, define class definitions outside", () => {
           index: value[2],
         });
       },
-    }],
+    },
   });
   const superserial3 = new Superserial();
   superserial3.defineClass(
-    TestArticle,
+    "AliasedArticle",
     {
-      name: "AliasedArticle",
+      type: TestArticle,
       toSerialize(value: TestArticle) {
         return [value.title, value.content, 3] as const;
       },
@@ -178,9 +177,7 @@ Deno.test("superserial, define class definitions outside", () => {
     const [index, superserial] of [superserial1, superserial2, superserial3]
       .entries()
   ) {
-    const serialized = `[["AliasedArticle",[["Hello World!","Wow!",${
-      index + 1
-    }]]]]`;
+    const serialized = `[["AliasedArticle",[["Hello World!","Wow!",${index + 1}]]]]`;
 
     {
       const article = new TestArticle("Hello World!", "Wow!");
@@ -194,5 +191,42 @@ Deno.test("superserial, define class definitions outside", () => {
       assertEquals(article.content, "Wow!");
       assertEquals((article as unknown as { index: number }).index, index + 1);
     }
+  }
+});
+
+Deno.test("superserial, decorator", () => {
+  const superserial = new Superserial({ decorator: true });
+
+  const serialized = '[["TestUser",{"name":"Alice","age":20}]]';
+
+  {
+    const user = new TestUser("Alice");
+    user.setAge(20);
+
+    assertEquals(superserial.serialize(user), serialized);
+  }
+  {
+    const user = superserial.deserialize<TestUser>(serialized);
+
+    assertInstanceOf(user, TestUser);
+    assertEquals(user.name, "Alice");
+    assertEquals(user.getAge(), 20);
+  }
+  {
+    @serializable({
+      toSerialize: (value: TestComment) => ({ c: value.content }),
+      toDeserialize: (value: { c: string }) => new TestComment(value.c),
+    })
+    class TestComment {
+      constructor(public content: string) {}
+    }
+    const serialized = '[["TestComment",{"c":"hello world"}]]';
+    const comment = new TestComment("hello world");
+
+    assertEquals(superserial.serialize(comment), serialized);
+
+    const deserialized = superserial.deserialize<TestComment>(serialized);
+    assertInstanceOf(deserialized, TestComment);
+    assertEquals(deserialized.content, "hello world");
   }
 });
