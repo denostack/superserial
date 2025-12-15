@@ -27,13 +27,14 @@
     "exclude": [".npm"]
   },
   "fmt": {
-    "exclude": [".npm"],
+    "exclude": [".npm", ".benchmark"],
     "lineWidth": 120
   },
   "publish": {
     "exclude": [
       ".github",
       ".vscode",
+      ".benchmark",
       "scripts",
       "examples",
       "**/*.test.ts"

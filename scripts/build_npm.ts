@@ -21,8 +21,7 @@ await build({
   package: {
     name: "superserial",
     version,
-    description:
-      "A comprehensive Serializer/Deserializer that can handle any data type.",
+    description: "A comprehensive Serializer/Deserializer that can handle any data type.",
     keywords: [
       "serialize",
       "serializer",

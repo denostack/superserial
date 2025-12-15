@@ -16,7 +16,7 @@ class User {
 class EmptyUser {
 }
 
-Deno.test("serialize primitive", () => {
+Deno.test("serialize - handles primitives", () => {
   assertStrictEquals(serialize(null), "[null]");
 
   assertStrictEquals(serialize(true), "[true]");
@@ -35,7 +35,7 @@ Deno.test("serialize primitive", () => {
   assertStrictEquals(serialize("\x00"), '["\\u0000"]');
 });
 
-Deno.test("serialize constants", () => {
+Deno.test("serialize - handles constants", () => {
   assertEquals(serialize(undefined), "[[1]]");
   assertEquals(serialize(NaN), "[[2]]");
   assertEquals(serialize(Infinity), "[[3]]");
@@ -43,7 +43,7 @@ Deno.test("serialize constants", () => {
   assertEquals(serialize(-0), "[[5]]");
 });
 
-Deno.test("serialize bigint", () => {
+Deno.test("serialize - handles BigInts", () => {
   assertEquals(serialize(30n), '[["BigInt","30"]]');
   assertEquals(serialize(-30n), '[["BigInt","-30"]]');
   assertEquals(
@@ -56,7 +56,7 @@ Deno.test("serialize bigint", () => {
   );
 });
 
-Deno.test("serialize array", () => {
+Deno.test("serialize - handles arrays", () => {
   assertEquals(serialize([]), "[[[]]]");
   assertEquals(
     serialize([[[{}, 2, "", false, []], [[]]], [1, 2], [1]]),
@@ -64,13 +64,13 @@ Deno.test("serialize array", () => {
   );
 });
 
-Deno.test("serialize array self circular", () => {
+Deno.test("serialize - handles self-circular arrays", () => {
   const value = [] as unknown[];
   value.push(value);
   assertEquals(serialize(value), "[[[[0,0]]]]");
 });
 
-Deno.test("serialize array circular", () => {
+Deno.test("serialize - handles circular reference in arrays", () => {
   const value = [] as unknown[];
   const otherValue = [] as unknown[];
   value.push(otherValue);
@@ -79,7 +79,7 @@ Deno.test("serialize array circular", () => {
   assertEquals(serialize(value), "[[[[[[0,0]]]]]]");
 });
 
-Deno.test("serialize object", () => {
+Deno.test("serialize - handles plain objects", () => {
   assertEquals(serialize({}), "[{}]");
   assertEquals(serialize(function () {}), "[{}]"); // not supported
   assertEquals(serialize(Object.create(null)), "[{}]");
@@ -94,13 +94,13 @@ Deno.test("serialize object", () => {
   );
 });
 
-Deno.test("serialize object self circular", () => {
+Deno.test("serialize - handles self-circular objects", () => {
   const value = {} as { a: unknown };
   value.a = value;
   assertEquals(serialize(value), '[{"a":[0,0]}]');
 });
 
-Deno.test("serialize object circular", () => {
+Deno.test("serialize - handles circular reference in objects", () => {
   const parent = {} as { children: unknown[] };
   const child1 = { parent } as {
     parent: unknown;
@@ -125,7 +125,7 @@ Deno.test("serialize object circular", () => {
   );
 });
 
-Deno.test("serialize object with array", () => {
+Deno.test("serialize - handles objects with embedded arrays", () => {
   assertEquals(
     serialize([{ name: "wan2land" }, { name: "wan3land" }]),
     '[[[{"name":"wan2land"},{"name":"wan3land"}]]]',
@@ -137,7 +137,7 @@ Deno.test("serialize object with array", () => {
   );
 });
 
-Deno.test("serialize named object without reducer", () => {
+Deno.test("serialize - handles named objects without reducer", () => {
   const user = new User("wan2land", 20);
 
   assertEquals(
@@ -146,7 +146,7 @@ Deno.test("serialize named object without reducer", () => {
   );
 });
 
-Deno.test("serialize named object with empty reducer", () => {
+Deno.test("serialize - handles named objects with empty reducer", () => {
   const user = new EmptyUser();
 
   assertEquals(
@@ -160,7 +160,7 @@ Deno.test("serialize named object with empty reducer", () => {
   );
 });
 
-Deno.test("serialize named object with reducer", () => {
+Deno.test("serialize - handles named objects with custom reducer", () => {
   const user = new User("wan2land", 20);
   assertEquals(
     serialize(
@@ -176,7 +176,7 @@ Deno.test("serialize named object with reducer", () => {
   );
 });
 
-Deno.test("serialize Symbol", () => {
+Deno.test("serialize - handles Symbols", () => {
   assertEquals(serialize(Symbol()), '[["Symbol"]]');
   assertEquals(serialize(Symbol("desc1")), '[["Symbol"]]');
   assertEquals(
@@ -192,20 +192,20 @@ Deno.test("serialize Symbol", () => {
   );
 });
 
-Deno.test("serialize Set", () => {
+Deno.test("serialize - handles Sets", () => {
   assertEquals(
     serialize(new Set([1, 2, 3, 4, 5])),
     '[["Set",1,2,3,4,5]]',
   );
 });
 
-Deno.test("serialize Set circular", () => {
+Deno.test("serialize - handles circular reference in Sets", () => {
   const set = new Set();
   set.add(set);
   assertEquals(serialize(set), '[["Set",[0,0]]]');
 });
 
-Deno.test("serialize Map", () => {
+Deno.test("serialize - handles Maps", () => {
   assertEquals(
     serialize(
       new Map<unknown, unknown>([
@@ -219,7 +219,7 @@ Deno.test("serialize Map", () => {
   );
 });
 
-Deno.test("serialize Map deep", () => {
+Deno.test("serialize - handles deep Maps", () => {
   assertEquals(
     serialize(
       new Map<unknown, unknown>([
@@ -237,7 +237,7 @@ Deno.test("serialize Map deep", () => {
   );
 });
 
-Deno.test("serialize Map circular", () => {
+Deno.test("serialize - handles circular reference in Maps", () => {
   {
     const value = new Map<unknown, unknown>();
     value.set(value, value);
@@ -259,14 +259,14 @@ Deno.test("serialize Map circular", () => {
   }
 });
 
-Deno.test("serialize Date", () => {
+Deno.test("serialize - handles Dates", () => {
   assertEquals(
     serialize(new Date(1640962800000)),
     '[["Date",1640962800000]]',
   );
 });
 
-Deno.test("serialize RegExp", () => {
+Deno.test("serialize - handles Regular Expressions", () => {
   assertEquals(serialize(/abc/), '[["RegExp","abc"]]');
   assertEquals(serialize(/abc/gmi), '[["RegExp","abc","gim"]]');
 });

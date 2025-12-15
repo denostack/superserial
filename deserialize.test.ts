@@ -1,12 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 
-import {
-  assert,
-  assertEquals,
-  assertInstanceOf,
-  assertNotStrictEquals,
-  assertStrictEquals,
-} from "@std/assert";
+import { assert, assertEquals, assertInstanceOf, assertNotStrictEquals, assertStrictEquals } from "@std/assert";
 import { deserialize } from "./deserialize.ts";
 import { serialize } from "./serialize.ts";
 import { complex } from "./.benchmark/variables.ts";
@@ -26,7 +20,7 @@ class User {
 class EmptyUser {
 }
 
-Deno.test("deserialize values(primitive, constants, bigint)", () => {
+Deno.test("deserialize - handles primitives, constants, and bigints", () => {
   const values = [
     // null
     null,
@@ -67,7 +61,7 @@ Deno.test("deserialize values(primitive, constants, bigint)", () => {
   }
 });
 
-Deno.test("deserialize array", () => {
+Deno.test("deserialize - restores arrays", () => {
   assertEquals(deserialize(serialize([])), []);
 
   for (
@@ -83,12 +77,12 @@ Deno.test("deserialize array", () => {
   }
 });
 
-Deno.test("deserialize array self circular", () => {
+Deno.test("deserialize - handles self-circular arrays", () => {
   const value = deserialize<unknown[]>("[[[[0,0]]]]");
   assertStrictEquals(value, value[0]);
 });
 
-Deno.test("deserialize array circular", () => {
+Deno.test("deserialize - handles circular reference in arrays", () => {
   for (const serialized of ["[[[[[[0,0]]]]]]", "[[[[0,1]]],[[[0,0]]]]"]) {
     const value = deserialize<unknown[][]>(serialized);
 
@@ -99,7 +93,7 @@ Deno.test("deserialize array circular", () => {
   }
 });
 
-Deno.test("deserialize object", () => {
+Deno.test("deserialize - restores plain objects", () => {
   assertEquals(deserialize(serialize({})), {});
 
   {
@@ -120,12 +114,12 @@ Deno.test("deserialize object", () => {
   }
 });
 
-Deno.test("deserialize object self circular", () => {
+Deno.test("deserialize - handles self-circular objects", () => {
   const value = deserialize<{ a: unknown }>('[{"a":[0,0]}]');
   assertStrictEquals(value.a, value);
 });
 
-Deno.test("deserialize object circular", () => {
+Deno.test("deserialize - handles circular reference in objects", () => {
   const value = deserialize<
     { children: { parent: unknown; next: unknown }[] }
   >('[{"children":[0,1]},[[[0,2],[0,3]]],{"parent":[0,0],"next":[0,3],"siblings":[0,1]},{"parent":[0,0],"next":[0,2],"siblings":[0,1]}]');
@@ -142,7 +136,7 @@ Deno.test("deserialize object circular", () => {
   assertStrictEquals(value.children[1].next, value.children[0]);
 });
 
-Deno.test("deserialize object with array", () => {
+Deno.test("deserialize - restores objects with embedded arrays", () => {
   for (
     const serialized of [
       '[[[[0,1],[0,2]]],{"name":"wan2land"},{"name":"wan3land"}]',
@@ -163,7 +157,7 @@ Deno.test("deserialize object with array", () => {
   }
 });
 
-Deno.test("deserialize named object without reviver", () => {
+Deno.test("deserialize - restores named objects as plain objects without reviver", () => {
   for (
     const serialized of [
       '[["U",[0,1]],{"name":"wan2land","age":20}]',
@@ -177,7 +171,7 @@ Deno.test("deserialize named object without reviver", () => {
   }
 });
 
-Deno.test("deserialize named object with empty reviver", () => {
+Deno.test("deserialize - restores named objects using empty reviver", () => {
   const value = deserialize(
     '[["Eu"]]',
     new Map([["Eu", () => new EmptyUser()]]),
@@ -187,7 +181,7 @@ Deno.test("deserialize named object with empty reviver", () => {
   assertEquals(Object.keys(value), []);
 });
 
-Deno.test("deserialize named object with reviver", () => {
+Deno.test("deserialize - restores named objects using custom reviver", () => {
   for (
     const serialized of [
       '[["U",[0,1]],{"name":"wan2land","age":20}]',
@@ -209,7 +203,7 @@ Deno.test("deserialize named object with reviver", () => {
   }
 });
 
-Deno.test("deserialize symbol", () => {
+Deno.test("deserialize - restores symbols", () => {
   {
     const symbol = deserialize<symbol>('[["Symbol"]]');
     assertEquals(typeof symbol, "symbol");
@@ -233,14 +227,14 @@ Deno.test("deserialize symbol", () => {
   }
 });
 
-Deno.test("deserialize Set", () => {
+Deno.test("deserialize - restores Sets", () => {
   assertEquals(
     deserialize(serialize(new Set([1, 2, 3, 4, 5]))),
     new Set([1, 2, 3, 4, 5]),
   );
 });
 
-Deno.test("deserialize Set circular", () => {
+Deno.test("deserialize - handles circular reference in Sets", () => {
   function createSet() {
     const set = new Set();
     set.add(set);
@@ -255,7 +249,7 @@ Deno.test("deserialize Set circular", () => {
   );
 });
 
-Deno.test("deserialize Map", () => {
+Deno.test("deserialize - restores Maps", () => {
   for (
     const serialized of [
       '[["Map",[0,1],[0,2],[0,3],[0,4]],[["string","this is string"]],[[true,"boolean"]],[[null,"null"]],[[[0,5],"object"]],{}]',
@@ -274,7 +268,7 @@ Deno.test("deserialize Map", () => {
   }
 });
 
-Deno.test("deserialize Map deep", () => {
+Deno.test("deserialize - restores deep Maps", () => {
   for (
     const serialized of [
       '[["Map",[0,1],[0,2]],[["key1",[0,3]]],[[[0,4],"val2"]],["Map",[0,5],[0,6]],["Map",[0,7],[0,8]],[["key1_1","value1_1"]],[["key1_2","value1_2"]],[["key2_1","value2_1"]],[["key2_2","value2_2"]]]',
@@ -297,7 +291,7 @@ Deno.test("deserialize Map deep", () => {
   }
 });
 
-Deno.test("deserialize Map circular", () => {
+Deno.test("deserialize - handles circular reference in Maps", () => {
   for (
     const serialized of [
       '[["Map",[0,1]],[[[0,0],[0,0]]]]',
@@ -330,14 +324,14 @@ Deno.test("deserialize Map circular", () => {
   }
 });
 
-Deno.test("deserialize Date", () => {
+Deno.test("deserialize - restores Dates", () => {
   assertEquals(
     deserialize(serialize(new Date(1640962800000))),
     new Date(1640962800000),
   );
 });
 
-Deno.test("deserialize RegExp", () => {
+Deno.test("deserialize - restores Regular Expressions", () => {
   const re1 = deserialize<RegExp>(serialize(/abc/));
   assertEquals(re1.source, "abc");
   assertEquals(re1.flags, "");
@@ -347,7 +341,7 @@ Deno.test("deserialize RegExp", () => {
   assertEquals(re2.flags, "gim");
 });
 
-Deno.test("deserialize complex", () => {
+Deno.test("deserialize - restores complex nested structures", () => {
   const checkedObject = new Map<any, any>();
   function assertDeepEqual(a: unknown, b: unknown) {
     if (a === null) {

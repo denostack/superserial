@@ -40,7 +40,7 @@ class TestArticle {
   constructor(public title: string, public content: string) {}
 }
 
-Deno.test("superserial, default serialize/deserialize without class definitions", () => {
+Deno.test("Superserial - handles unregistered classes as plain objects", () => {
   const superserial = new Superserial({ classes: {} });
   const serialized = '[{"title":"hello world","content":"yes!"}]';
 
@@ -57,7 +57,7 @@ Deno.test("superserial, default serialize/deserialize without class definitions"
   }
 });
 
-Deno.test("superserial, default serialize/deserialize with default class definitions", () => {
+Deno.test("Superserial - restores class instances with basic registration", () => {
   const superserial1 = new Superserial({ classes: { TestArticle } });
   const superserial2 = new Superserial();
   superserial2.defineClasses({ TestArticle });
@@ -80,7 +80,7 @@ Deno.test("superserial, default serialize/deserialize with default class definit
   }
 });
 
-Deno.test("superserial, serialize/deserialize with toSerialize, toDeserialize", () => {
+Deno.test("Superserial - applies internal custom serialization logic using symbols", () => {
   const superserial1 = new Superserial({ classes: { TestUser } });
   const superserial2 = new Superserial();
   superserial2.defineClasses({ TestUser });
@@ -104,7 +104,7 @@ Deno.test("superserial, serialize/deserialize with toSerialize, toDeserialize", 
   }
 });
 
-Deno.test("superserial, alias class name", () => {
+Deno.test("Superserial - supports aliased class names", () => {
   const superserial1 = new Superserial({ classes: { AliasedUser: TestUser } });
   const superserial2 = new Superserial();
   superserial2.defineClasses({ AliasedUser: TestUser });
@@ -127,7 +127,7 @@ Deno.test("superserial, alias class name", () => {
   }
 });
 
-Deno.test("superserial, define class definitions outside", () => {
+Deno.test("Superserial - prioritizes external serialization logic for classes", () => {
   const superserial1 = new Superserial({
     classes: {
       AliasedArticle: {
@@ -194,7 +194,7 @@ Deno.test("superserial, define class definitions outside", () => {
   }
 });
 
-Deno.test("superserial, decorator", () => {
+Deno.test("Superserial - integrates serializable decorator for auto-registration", () => {
   const superserial = new Superserial({ decorator: true });
 
   const serialized = '[["TestUser",{"name":"Alice","age":20}]]';

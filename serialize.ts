@@ -11,8 +11,7 @@ const builtInReducers = new Map<ConstructType<unknown>, Reducer<any>>(
     [Date, ["Date", (value: Date) => [value.getTime()]]],
     [RegExp, [
       "RegExp",
-      (value: RegExp) =>
-        value.flags ? [value.source, value.flags] : [value.source],
+      (value: RegExp) => value.flags ? [value.source, value.flags] : [value.source],
     ]],
     [Set, ["Set", (value: Set<unknown>) => [...value]]],
     [Map, ["Map", (value: Map<unknown, unknown>) => [...value.entries()]]],
