@@ -308,10 +308,7 @@ Please see [benchmark results](.benchmark).
 
 ## See also
 
-- [Creating Superserial](https://wan2.land/posts/2022/09/14/superserial/) - My blog post about superserial. (Korean)
 - [SuperClosure](https://github.com/jeremeamia/super_closure) PHP Serialize Library, superserial was inspired by this.
 - [flatted](https://github.com/WebReflection/flatted)
-- [lave](https://github.com/jed/lave)
-- [arson](https://github.com/benjamn/arson)
 - [devalue](https://github.com/Rich-Harris/devalue)
 - [superjson](https://github.com/blitz-js/superjson)

@@ -18,10 +18,7 @@
     "ansi-to-svg": "npm:ansi-to-svg@1.4.3"
   },
   "exports": {
-    ".": "./mod.ts",
-    "./deserialize": "./deserialize.ts",
-    "./serialize": "./serialize.ts",
-    "./serializer": "./serializer.ts"
+    ".": "./mod.ts"
   },
   "lint": {
     "exclude": [".npm"]

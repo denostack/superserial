@@ -20,7 +20,7 @@ const builtInReducers = new Map<ConstructType<unknown>, Reducer<any>>(
 
 export function serialize(
   input: unknown,
-  reducers = new Map<ConstructType<unknown>, Reducer<any>>(),
+  reducers: Map<ConstructType<unknown>, Reducer<any>> = new Map<ConstructType<unknown>, Reducer<any>>(),
 ): string {
   const counters = new Map<unknown, number>();
   const reduced = new Map<unknown, [name: string, args: unknown[]]>();

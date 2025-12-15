@@ -6,7 +6,7 @@ export type Reviver<T> = (...args: any[]) => T;
 
 export function deserialize<T = unknown>(
   input: string,
-  revivers = new Map<string, Reviver<any>>(),
+  revivers: Map<string, Reviver<any>> = new Map<string, Reviver<any>>(),
 ): T {
   const nodes = JSON.parse(input) as AstAny[];
   const resolved = [] as unknown[];

@@ -10,11 +10,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Git Checkout Deno Module
+      - name: Clone repository
         uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
         with:
-          deno-version: vx.x.x
+          deno-version: v2.x
       - name: Format
         run: deno fmt --check
       - name: Lint
@@ -23,11 +24,11 @@ jobs:
         run: deno test --coverage=coverage
       - name: Create coverage report
         run: deno coverage ./coverage --lcov > coverage.lcov
-      - name: Collect coverage
+      - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: denostack/intlit
-          files: ./coverage.lcov
+          slug: denostack/superserial
+          file: ./coverage.lcov
       - name: Build Module
         run: deno task build:npm
