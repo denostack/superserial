@@ -7,77 +7,63 @@
   <img alt="Language Typescript" src="https://img.shields.io/badge/language-Typescript-007acc.svg?style=flat-square" />
   <br />
   <a href="https://jsr.io/@denostack/superserial"><img alt="JSR version" src="https://jsr.io/badges/@denostack/superserial?style=flat-square" /></a>
-  <a href="https://deno.land/x/superserial"><img alt="Deno version" src="https://deno.land/badge/superserial/version?style=flat-square" /></a>
   <a href="https://www.npmjs.com/package/superserial"><img alt="NPM Version" src="https://img.shields.io/npm/v/superserial.svg?style=flat-square&logo=npm" /></a>
   <a href="https://npmcharts.com/compare/superserial?minimal=true"><img alt="Downloads" src="https://img.shields.io/npm/dt/superserial.svg?style=flat-square" /></a>
 </p>
 
 A comprehensive Serializer/Deserializer that can handle any data type.
 
-## Usage
+## Installation
 
-### with Deno
+### Via JSR (Deno)
 
 ```bash
-deno add @denostack/superserial
+deno add jsr:@denostack/superserial
 ```
 
 ```ts
-import { Serializer } from "@denostack/superserial";
-
-const serializer = new Serializer();
-
-const nodes = [{ self: null as any, siblings: [] as any[] }, {
-  self: null as any,
-  siblings: [] as any[],
-}];
-nodes[0].self = nodes[0];
-nodes[0].siblings = nodes;
-nodes[1].self = nodes[1];
-nodes[1].siblings = nodes;
-
-const serialized = serializer.serialize(nodes);
-
-console.log(serialized);
-// [$1,$2];{"self":$1,"siblings":$0};{"self":$2,"siblings":$0}
+import { Superserial } from "@denostack/superserial";
 ```
 
-### with Node.js & Browser
-
-**Install**
+### Via NPM (Node.js, Bun, Deno)
 
 ```bash
+# npm
 npm install superserial
+
+# bun
+bun add superserial
+
+# deno
+deno add npm:superserial
 ```
 
 ```ts
-import { Serializer } from "superserial";
-
-// Usage is as above :-)
+import { Superserial } from "superserial";
 ```
+
+## Breaking Changes
+
+### Serialized Format Change
+
+> The serialized output format has been updated for **performance optimization** and introduces a **breaking change**
+> when upgrading from `0.3.x` to `0.4.x`. Data serialized with `superserial` versions `0.3.x` (or earlier) cannot be
+> deserialized with version `0.4.x` (or later).
 
 ## Index
 
 - [Built-in Objects](#built-in-objects)
 - [Circular Reference](#circular-reference)
-- [Class Support](#class-support)
+- [Custom Class Support](#custom-class-support)
 
 ### Built-in Objects
 
 **Value Properties**
 
 - `NaN`
+- `-0`, `+0`
 - `Infinity`, `-Infinity`
 - `undefined`
-
-```ts
-serializer.serialize({
-  und: undefined,
-  nan: NaN,
-  inf: Infinity,
-  ninf: -Infinity,
-}); // {"und":undefined,"nan":NaN,"inf":Infinity,"ninf":-Infinity}
-```
 
 **Fundamental Objects**
 
@@ -92,8 +78,15 @@ serializer.serialize({
 - `Set`
 
 ```ts
+const superserial = new Superserial();
+
 const symbol = Symbol();
-serializer.serialize({
+const serialized = superserial.serialize({
+  nzero: -0,
+  und: undefined,
+  nan: NaN,
+  inf: Infinity,
+  ninf: -Infinity,
   sym: symbol,
   bigint: 100n,
   date: new Date(),
@@ -101,13 +94,28 @@ serializer.serialize({
   map: new Map([["key1", "value1"], ["key2", "value2"]]),
   set: new Set([1, 2, 3, 4]),
 });
-// {"sym":$1,"bigint":100n,"date":$2,"regex":$3,"map":$4,"set":$5};Symbol();Date(1648740167514);/abc/gim;Map("key1"=>"value1","key2"=>"value2");Set(1,2,3,4)
+
+const deserialized = superserial.deserialize(serialized);
+/*
+{
+  nzero: -0,
+  und: undefined,
+  nan: NaN,
+  inf: Infinity,
+  ninf: -Infinity,
+  sym: Symbol(), // Symbol but not exact same with original
+  bigint: 100n,
+  date: 2025-12-15T09:05:09.108Z, // ... Date!
+  regex: /abc/gim,
+  map: Map(2) { "key1" => "value1", "key2" => "value2" },
+  set: Set(4) { 1, 2, 3, 4 }
+}
+*/
 ```
 
 ### Circular Reference
 
-Existing JSON functions do not support circular references, but **superserial**
-has solved this problem.
+Existing JSON functions do not support circular references, but **superserial** has solved this problem.
 
 ```ts
 const nodes = [{ self: null as any, siblings: [] as any[] }, {
@@ -119,12 +127,12 @@ nodes[0].siblings = nodes;
 nodes[1].self = nodes[1];
 nodes[1].siblings = nodes;
 
-const serialized = serializer.serialize(nodes);
+const serialized = superserial.serialize(nodes);
 
 console.log(serialized);
-// [$1,$2];{"self":$1,"siblings":$0};{"self":$2,"siblings":$0}
+// [[[[0,1],[0,2]]],{"self":[0,1],"siblings":[0,0]},{"self":[0,2],"siblings":[0,0]}]
 
-const deserialized = serializer.deserialize(serialized) as typeof nodes;
+const deserialized = superserial.deserialize(serialized) as typeof nodes;
 
 console.log(deserialized === deserialized[0].siblings); // true
 console.log(deserialized[0] === deserialized[0].self); // true
@@ -138,158 +146,160 @@ console.log(deserialized[1] === deserialized[1].self); // true
 const set = new Set();
 set.add(set);
 
-serializer.serialize(set); // Set($0)
+superserial.serialize(set); // [["Set",[0,0]]]
 
 const map = new Map();
 map.set(map, map);
 
-serializer.serialize(map); // Map($0=>$0)
+superserial.serialize(map); // [["Map",[[[0,0],[0,0]]]]]
 ```
 
 Deserialization also works perfectly!
 
 ```ts
-const set = serializer.deserialize("Set($0)");
+const set = superserial.deserialize('[["Set",[0,0]]]') as Set<unknown>;
 
 console.log(set === [...set][0]); // true
 
-const map = serializer.deserialize("Map($0=>$0)");
+const map = superserial.deserialize('[["Map",[[[0,0],[0,0]]]]]') as Map<unknown, unknown>;
 
 console.log(map === [...map.keys()][0]); // true
 console.log(map === map.get([...map.keys()][0])); // true
 ```
 
-### Class Support
+### Custom Class Support
 
-Classes contain methods, getters, etc., but JSON doesn't fully support them.
-**superserial** includes features that make it easy to use.
+Classes contain methods, getters, etc., but JSON doesn't fully support them. **superserial** allows you to preserve the
+class instance, including all its methods and internal state.
 
-The class to be used for `deserialize` is defined when the Serializer is
-created.
+#### 1. Using Decorators (Recommended)
+
+The easiest way to register a class is using the `@serializable` decorator. You need to enable the `decorator` option
+when creating the `Superserial` instance.
 
 ```ts
+import { serializable, Superserial } from "superserial";
+
+@serializable()
 class TestUser {
-  constructor(
-    public name?: string,
-    public age?: number,
-  ) {
+  constructor(public name: string, public age: number) {}
+
+  greet() {
+    return `Hello, ${this.name}`;
   }
 }
 
-const serializer = new Serializer({ classes: { TestUser } });
-```
+// Enable decorator support
+const superserial = new Superserial({ decorator: true });
 
-Serializes the object and then deserializes it again. Since the original class
-object is converted as it is, all getters and methods can be used as they are.
-
-```ts
-const serialized = serializer.serialize(new TestUser("wan2land", 20));
+const serialized = superserial.serialize(new TestUser("wan2land", 20));
 console.log(serialized);
-// TestUser{"name":"wan2land","age":20}
+// [["TestUser",{"name":"wan2land","age":20}]]
 
-const user = serializer.deserialize(serialized);
-console.log(user); // TestUser { name: "wan2land", age: 20 }
+const user = superserial.deserialize<TestUser>(serialized);
+console.log(user instanceof TestUser); // true
+console.log(user.greet()); // "Hello, wan2land"
 ```
 
-#### Alias
-
-If you want to serialize a class with a different name, you can use the
-`classes` option.
+You can also specify a custom name (alias) or custom serialization logic directly in the decorator.
 
 ```ts
-class TestUser {
-  constructor(
-    public name?: string,
-    public age?: number,
-  ) {
-  }
-}
+@serializable("MyUser") // Alias
+class TestUser {/* ... */}
 
-const serializer = new Serializer({
-  classes: {
-    AliasTestUser: TestUser,
-  },
-});
+@serializable({
+  toSerialize: (user) => ({ n: user.name }), // Custom logic
+  toDeserialize: (value) => new TestUser(value.n, 0),
+})
+class CompactUser {/* ... */}
 ```
 
-```ts
-const serialized = serializer.serialize(new TestUser("wan2land", 20));
-console.log(serialized);
-// AliasTestUser{"name":"wan2land","age":20}   <--- AliasTestUser
+#### 2. Internal Control (Using Symbols)
 
-const user = serializer.deserialize(serialized);
-console.log(user); // TestUser { name: "wan2land", age: 20 }
-```
-
-#### toSerialize / toDeserialize
-
-Private variables can be converted using two special symbols (`toSerialize`,
-`toDeserialize`).
-
-When serializing(`serialize`), the object's data is created based on the
-`toSerialize` method. You can check the result of `toSerialize` by looking at
-the serialized string.
-
-When deserializing(`deserialize`), it is impossible to create an object without
-a constructor call. (ref.
-[No backdoor to access private](https://github.com/tc39/proposal-class-fields#no-backdoor-to-access-private))
-If the `toDeserialize` method is included, a value can be injected through
-`toDeserialize` after calling the constructor.
+If you need fine-grained control, such as handling private fields (`#private`) or transforming data, you can implement
+the `toSerialize` and `toDeserialize` symbols within your class. This keeps the serialization logic encapsulated within
+the class.
 
 ```ts
-import {
-  Serializer,
-  toDeserialize,
-  toSerialize,
-} from "https://deno.land/x/superserial/mod.ts";
+import { Superserial, toDeserialize, toSerialize } from "superserial";
 
-class TestUser {
-  #_age = 0;
+class SecureUser {
+  #age = 0;
   constructor(public name: string) {
-    this.#_age = 0;
+    this.#age = 0;
   }
 
   setAge(age: number) {
-    this.#_age = age;
+    this.#age = age;
   }
 
   getAge() {
-    return this.#_age;
+    return this.#age;
   }
 
+  // Define what to save
   [toSerialize]() {
     return {
       name: this.name,
-      age: this.#_age,
+      age: this.#age, // Access private field
     };
   }
 
-  [toDeserialize](
-    value: {
-      name: string;
-      age: number;
-    },
-  ) {
-    this.name = value.name;
-    this.#_age = value.age;
+  // Define how to restore
+  static [toDeserialize](value: { name: string; age: number }) {
+    const user = new SecureUser(value.name);
+    user.setAge(value.age);
+    return user;
   }
 }
 
-const serializer = new Serializer({ classes: { TestUser } });
+const superserial = new Superserial({ classes: { SecureUser } });
 
-{
-  const user = new TestUser("wan2land");
-  user.setAge(20);
+const serialized = superserial.serialize(new SecureUser("Alice"));
+// [["SecureUser",{"name":"Alice","age":0}]]
+```
 
-  console.log(serializer.serialize(user)); // TestUser{"name":"wan2land","age":20}
+#### 3. External Definition (Using `defineClass`)
+
+If you are using a class from an external library and cannot modify its source code (e.g., adding decorators or
+symbols), you can inject the serialization logic using `defineClass`.
+
+```ts
+import { Superserial } from "superserial";
+
+// Assume this is from a 3rd-party library
+class ThirdPartyUser {
+  constructor(public name: string, public age: number) {}
 }
-{
-  const user = serializer.deserialize<TestUser>(
-    'TestUser{"name":"wan2land","age":20}',
-  );
-  console.log(user); // TestUser { name: "wan2land" }
-  console.log(user.getAge()); // 20
-}
+
+const superserial = new Superserial();
+
+superserial.defineClass("ThirdPartyUser", {
+  type: ThirdPartyUser,
+  toSerialize(user: ThirdPartyUser) {
+    return { n: user.name, a: user.age };
+  },
+  toDeserialize(value: { n: string; a: number }) {
+    return new ThirdPartyUser(value.n, value.a);
+  },
+});
+
+const serialized = superserial.serialize(new ThirdPartyUser("Bob", 30));
+console.log(serialized);
+// [["ThirdPartyUser",{"n":"Bob","a":30}]]
+```
+
+#### Manual Registration
+
+If you don't use decorators, you can simply register classes via the `classes` option.
+
+```ts
+const serializer = new Superserial({
+  classes: {
+    TestUser,
+    MyUser: User, // Register with an alias
+  },
+});
 ```
 
 ## Benchmark
@@ -298,10 +308,8 @@ Please see [benchmark results](.benchmark).
 
 ## See also
 
-- [Creating Superserial](https://wan2.land/posts/2022/09/14/superserial/) - My
-  blog post about superserial. (Korean)
-- [SuperClosure](https://github.com/jeremeamia/super_closure) PHP Serialize
-  Library, superserial was inspired by this.
+- [Creating Superserial](https://wan2.land/posts/2022/09/14/superserial/) - My blog post about superserial. (Korean)
+- [SuperClosure](https://github.com/jeremeamia/super_closure) PHP Serialize Library, superserial was inspired by this.
 - [flatted](https://github.com/WebReflection/flatted)
 - [lave](https://github.com/jed/lave)
 - [arson](https://github.com/benjamn/arson)
