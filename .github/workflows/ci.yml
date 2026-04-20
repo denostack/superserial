@@ -10,10 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Clone repository
+      - name: Git Checkout Deno Module
         uses: actions/checkout@v4
-      - name: Install Deno
-        uses: denoland/setup-deno@v2
+      - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
       - name: Format
@@ -24,11 +23,11 @@ jobs:
         run: deno test --coverage=coverage
       - name: Create coverage report
         run: deno coverage ./coverage --lcov > coverage.lcov
-      - name: Upload coverage reports to Codecov
+      - name: Collect coverage
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: denostack/superserial
-          file: ./coverage.lcov
+          files: ./coverage.lcov
       - name: Build Module
         run: deno task build:npm
